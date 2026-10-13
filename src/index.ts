@@ -1,6 +1,5 @@
 export {
   CONFIG_KEYS,
-  RETIRED_ENV_NAMES,
   acceptsEnvName,
   configSchema,
   envName,

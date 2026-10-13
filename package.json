@@ -1,7 +1,7 @@
 {
-  "name": "@easy-sandbox/sdk",
+  "name": "@agent-sandbox/sdk",
   "version": "0.1.0",
-  "description": "Easy Sandbox Node.js SDK — in-sandbox HTTP client and configuration env names",
+  "description": "Agent Sandbox Node.js SDK — in-sandbox HTTP client and configuration env names",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
@@ -30,15 +30,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Easy-Sandbox/nodejs-sdk.git"
+    "url": "git+https://github.com/alibaba-agent-sandbox/nodejs-sdk.git"
   },
-  "homepage": "https://github.com/Easy-Sandbox/nodejs-sdk#readme",
+  "homepage": "https://github.com/alibaba-agent-sandbox/nodejs-sdk#readme",
   "bugs": {
-    "url": "https://github.com/Easy-Sandbox/nodejs-sdk/issues"
+    "url": "https://github.com/alibaba-agent-sandbox/nodejs-sdk/issues"
   },
   "keywords": [
     "sandbox",
-    "easy-sandbox",
+    "agent-sandbox",
     "sdk",
     "agents"
   ],

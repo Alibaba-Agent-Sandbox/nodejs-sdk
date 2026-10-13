@@ -2,7 +2,7 @@
 /**
  * Local stand-in for: create sandbox -> exec -> read result -> kill.
  *
- * Starts `python3 -m easy_sandbox.server serve` on 127.0.0.1, talks to it with
+ * Starts `python3 -m agent_sandbox.server serve` on 127.0.0.1, talks to it with
  * ServerClient, and prints every response. Same four steps as
  * python-sdk/examples/scenarios/agent_loop_local.py. Does not call a cloud API.
  */
@@ -21,11 +21,11 @@ const PYTHONPATH = [
 ].join(path.delimiter);
 
 const DROPPED_ENV = [
-  "EBX_SERVER_TOKEN",
-  "EBX_SERVER_POLICY",
-  "EBX_SERVER_POLICY_FILE",
-  "EBX_SANDBOX_API_KEY",
-  "E2B_API_KEY",
+  "ABX_SERVER_TOKEN",
+  "ABX_SERVER_POLICY",
+  "ABX_SERVER_POLICY_FILE",
+  "ABX_SERVER_ENABLED_GROUPS",
+  "ABX_SANDBOX_API_KEY",
   // Never hand a GitHub credential to the local server process.
   "GH_TOKEN",
   "GITHUB_TOKEN",
@@ -108,20 +108,20 @@ function childEnv(baseDir) {
     if (typeof value === "string") env[key] = value;
   }
   for (const name of DROPPED_ENV) delete env[name];
-  env.EBX_SERVER_BASE_DIR = baseDir;
+  env.ABX_SERVER_BASE_DIR = baseDir;
   const prefix = [PYTHONPATH, env.PYTHONPATH ?? ""].filter(Boolean);
   env.PYTHONPATH = prefix.join(path.delimiter);
   return env;
 }
 
 async function main() {
-  const work = "/tmp/ebx-agent-loop-node";
+  const work = "/tmp/abx-agent-loop-node";
   const base = path.join(work, "base");
   await mkdir(base, { recursive: true });
   const port = await freePort();
   const proc = spawn(
     "python3",
-    ["-m", "easy_sandbox.server", "serve", "--host", "127.0.0.1", "--port", String(port)],
+    ["-m", "agent_sandbox.server", "serve", "--host", "127.0.0.1", "--port", String(port)],
     {
       cwd: work,
       env: childEnv(base),

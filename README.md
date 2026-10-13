@@ -1,20 +1,20 @@
-# @easy-sandbox/sdk
+# @agent-sandbox/sdk
 
 **English** | [中文](README.zh-CN.md)
 
-Node.js client for [Easy Sandbox](https://github.com/Easy-Sandbox/python-sdk). Node.js 20 or newer. ESM only.
+Node.js client for [Agent Sandbox](https://github.com/alibaba-agent-sandbox/python-sdk). Node.js 20 or newer. ESM only.
 
 This package is the **first slice** of the Node.js SDK. It contains:
 
 - the **configuration-name table** (one environment variable per key)
-- `ServerClient`, an **in-sandbox HTTP client** for `easy-sandbox-server`
+- `ServerClient`, an **in-sandbox HTTP client** for `agent-sandbox-server` (`agent_sandbox.server`)
 
-It is **not** a port of `Sandbox.create`, cloud providers, or the server SDK. Claude, Cursor, and Qoder adapters are not included. Creating a cloud sandbox still belongs to the Python SDK.
+It is **not** a port of `Sandbox.create`, cloud providers, or the server SDK. Creating a cloud sandbox still belongs to the Python SDK and the `abx` CLI.
 
 ## Install
 
 ```bash
-npm install @easy-sandbox/sdk
+npm install @agent-sandbox/sdk
 ```
 
 The published entry is `dist/`. From a checkout:
@@ -29,7 +29,7 @@ node examples/agent-loop.mjs
 
 ## ServerClient
 
-`ServerClient` speaks HTTP to a server started with `python3 -m easy_sandbox.server serve` (default port 9000). These four calls are the ones the local agent loop uses:
+`ServerClient` speaks HTTP to a server started with `python3 -m agent_sandbox.server serve` (default port 9000). These four calls are the ones the local agent loop uses. They are enabled by default:
 
 | Method | Request |
 | --- | --- |
@@ -38,10 +38,12 @@ node examples/agent-loop.mjs
 | `files.upload(path, data)` | `POST /files/upload-stream` with JSON `{ "path", "content_base64" }` |
 | `files.download(path)` / `files.readText(path)` | `GET /files/download-stream?path=` |
 
-`cwd`, `env`, and `timeout` are added to the shell body only when you set them. The server tokenises `command`; it does not run a shell. A bearer token, when passed to the constructor, is sent as `Authorization: Bearer`.
+`cwd`, `env`, and `timeout` are added to the shell body only when you set them. The server tokenises `command`; it does not run a shell. A bearer token, when passed to the constructor, is sent as `Authorization: Bearer` (the same secret as `ABX_SERVER_TOKEN`).
+
+Opt-in capability groups (`dev_tools`, `browser`, `agents`) stay off unless `ABX_SERVER_ENABLED_GROUPS` lists them. That variable is the only group switch. Agents routes answer with `X-Agent-Sandbox-*` headers (for example `X-Agent-Sandbox-Local`). This client does not call those routes.
 
 ```js
-import { ServerClient } from "@easy-sandbox/sdk";
+import { ServerClient } from "@agent-sandbox/sdk";
 
 const server = new ServerClient("http://127.0.0.1:9000");
 if (await server.health()) {
@@ -55,68 +57,52 @@ await server.close();
 
 ## Configuration names
 
-`src/config-keys.json` is the canonical list, copied from the Python client's `client-sdk/tests/fixtures/config-keys.json`. Each key has exactly one environment variable. There are no aliases.
+`src/config-keys.json` is the canonical list, exported from `python -m agent_sandbox.utils.config_keys --json`. Each key has exactly one environment variable. There are no aliases. `readEnv` reads only that name.
 
-Product keys use the `EBX_` prefix: `EBX_SANDBOX_API_KEY`, `EBX_SANDBOX_BASE_URL`, `EBX_SANDBOX_DOMAIN`, `EBX_LLM_API_KEY`, `EBX_PROVIDER`.
+Product keys use the `ABX_` prefix: `ABX_SANDBOX_API_KEY`, `ABX_SANDBOX_BASE_URL`, `ABX_SANDBOX_DOMAIN`, `ABX_PROVIDER`.
 
-Where the vendor already publishes a name, that name is the environment variable: `ALICLOUD_ACCESS_KEY_ID`, `ALICLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`, the `ACR_*` / `ACREE_INSTANCE_ID` names below, and `GITHUB_TOKEN`.
-
-These names are **not** accepted: `E2B_API_KEY`, `SANDBOX_API_KEY`, `AccessKey`, `EBX_ALICLOUD_EXPRESS_ACCESS_KEY_ID`. `readEnv` reads only the canonical name, so a retired name set beside it does not count. `EBX_ALICLOUD_EXPRESS_TEAM_ID` is a different key (`team_id`); it stays because the vendor has no separate name for it.
+Where the vendor already publishes a name, that name is the environment variable: `ALICLOUD_ACCESS_KEY_ID`, `ALICLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`, and `GITHUB_TOKEN`.
 
 ```js
-import { envName, readEnv } from "@easy-sandbox/sdk";
+import { envName, readEnv } from "@agent-sandbox/sdk";
 
-envName("sandbox_api_key"); // EBX_SANDBOX_API_KEY
+envName("sandbox_api_key"); // ABX_SANDBOX_API_KEY
 envName("access_key_id", "alicloud-express"); // ALICLOUD_ACCESS_KEY_ID
 readEnv("sandbox_api_key", process.env);
 ```
 
 | Key | Scope | Environment variable | Description |
 | --- | --- | --- | --- |
-| `provider` | core | `EBX_PROVIDER` | Default provider id |
-| `sandbox_api_key` | core | `EBX_SANDBOX_API_KEY` | Sandbox API key (any E2B-protocol endpoint) |
-| `sandbox_base_url` | core | `EBX_SANDBOX_BASE_URL` | Platform API URL, any E2B-protocol endpoint |
-| `sandbox_domain` | core | `EBX_SANDBOX_DOMAIN` | Envd data-plane domain |
-| `http_timeout` | core | `EBX_HTTP_TIMEOUT` | HTTP request timeout in seconds |
-| `http2` | core | `EBX_HTTP2` | Use HTTP/2 |
-| `max_retries` | core | `EBX_MAX_RETRIES` | Maximum automatic retries |
-| `max_connections` | core | `EBX_MAX_CONNECTIONS` | |
-| `max_keepalive_connections` | core | `EBX_MAX_KEEPALIVE_CONNECTIONS` | |
-| `keepalive_expiry` | core | `EBX_KEEPALIVE_EXPIRY` | |
-| `ws_ping_interval` | core | `EBX_WS_PING_INTERVAL` | |
-| `retry_base_delay` | core | `EBX_RETRY_BASE_DELAY` | |
-| `log_level` | core | `EBX_LOG_LEVEL` | Log level |
-| `default_template` | core | `EBX_DEFAULT_TEMPLATE` | Template used when none is given |
-| `llm_api_key` | core | `EBX_LLM_API_KEY` | LLM API key for AI codegen |
-| `llm_base_url` | core | `EBX_LLM_BASE_URL` | LLM endpoint (OpenAI-compatible) |
-| `llm_model` | core | `EBX_LLM_MODEL` | LLM model name |
+| `provider` | core | `ABX_PROVIDER` | Default provider id (see 'abx provider list') |
+| `sandbox_api_key` | core | `ABX_SANDBOX_API_KEY` | Agent Sandbox API key of the active provider |
+| `sandbox_base_url` | core | `ABX_SANDBOX_BASE_URL` | Agent Sandbox API endpoint of the active provider |
+| `sandbox_domain` | core | `ABX_SANDBOX_DOMAIN` | Envd data-plane domain |
+| `http_timeout` | core | `ABX_HTTP_TIMEOUT` | HTTP request timeout in seconds |
+| `http2` | core | `ABX_HTTP2` | Use HTTP/2 |
+| `max_retries` | core | `ABX_MAX_RETRIES` | Maximum automatic retries |
+| `max_connections` | core | `ABX_MAX_CONNECTIONS` | |
+| `max_keepalive_connections` | core | `ABX_MAX_KEEPALIVE_CONNECTIONS` | |
+| `keepalive_expiry` | core | `ABX_KEEPALIVE_EXPIRY` | |
+| `ws_ping_interval` | core | `ABX_WS_PING_INTERVAL` | |
+| `retry_base_delay` | core | `ABX_RETRY_BASE_DELAY` | |
+| `log_level` | core | `ABX_LOG_LEVEL` | Log level |
+| `default_template` | core | `ABX_DEFAULT_TEMPLATE` | Template used when none is given |
 | `github_token` | core | `GITHUB_TOKEN` | GitHub token for the template index |
-| `template_index_url` | core | `EBX_TEMPLATE_INDEX_URL` | |
-| `template_dir` | core | `EBX_TEMPLATE_DIR` | |
-| `mcp_auth_token` | core | `EBX_MCP_AUTH_TOKEN` | |
-| `mcp_allowed_origins` | core | `EBX_MCP_ALLOWED_ORIGINS` | |
-| `mcp_runtime_dir` | core | `EBX_MCP_RUNTIME_DIR` | |
+| `template_index_url` | core | `ABX_TEMPLATE_INDEX_URL` | |
+| `template_dir` | core | `ABX_TEMPLATE_DIR` | |
+| `mcp_auth_token` | core | `ABX_MCP_AUTH_TOKEN` | |
+| `mcp_allowed_origins` | core | `ABX_MCP_ALLOWED_ORIGINS` | |
+| `mcp_runtime_dir` | core | `ABX_MCP_RUNTIME_DIR` | |
 | `region` | alicloud-express | `ALIBABA_CLOUD_REGION_ID` | Region id (derives the API URL and domain) |
 | `access_key_id` | alicloud-express | `ALICLOUD_ACCESS_KEY_ID` | Alibaba Cloud AccessKey ID |
 | `access_key_secret` | alicloud-express | `ALICLOUD_ACCESS_KEY_SECRET` | Alibaba Cloud AccessKey secret |
-| `acr_namespace` | alicloud-express | `ACR_NAMESPACE` | ACR namespace |
-| `acr_registry` | alicloud-express | `ACR_REGISTRY` | ACR registry host |
-| `acr_repo` | alicloud-express | `ACR_REPO` | ACR repository |
-| `acr_username` | alicloud-express | `ACR_USERNAME` | ACR username |
-| `acr_password` | alicloud-express | `ACR_PASSWORD` | ACR password |
-| `acr_instance_id` | alicloud-express | `ACREE_INSTANCE_ID` | ACR Enterprise instance id |
-| `acr_vpc_id` | alicloud-express | `ACR_VPC_ID` | ACR VPC id |
-| `acr_vswitch_ids` | alicloud-express | `ACR_VSWITCH_IDS` | ACR vSwitch ids (comma-separated) |
-| `acr_security_group_id` | alicloud-express | `ACR_SECURITY_GROUP_ID` | ACR security group id |
-| `team_id` | alicloud-express | `EBX_ALICLOUD_EXPRESS_TEAM_ID` | Team id |
 
 ## What this package does not do
 
 - `Sandbox.create`, templates, or any cloud control plane
 - provider drivers (including Alibaba Cloud Express beyond the env-name table)
-- the in-sandbox server itself (`easy-sandbox-server` remains Python)
+- the in-sandbox server itself (`agent-sandbox-server` remains Python)
 - PTY, browser, devtools, or the rest of the Python `ServerClient` surface
-- Claude, Cursor, or Qoder adapters
 
 ## License
 

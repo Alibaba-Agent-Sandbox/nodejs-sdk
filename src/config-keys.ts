@@ -4,10 +4,10 @@ import { fileURLToPath } from "node:url";
 /**
  * Canonical configuration keys.
  *
- * `config-keys.json` is copied from the Python client's
- * `client-sdk/tests/fixtures/config-keys.json`. Each key has exactly one
- * environment variable (`env` / `env_names[0]`). Aliases are empty.
- * Retired names such as `E2B_API_KEY` are not keys and are not read.
+ * `config-keys.json` is the schema export of
+ * `agent_sandbox.utils.config_keys` (`python -m agent_sandbox.utils.config_keys --json`).
+ * Each key has exactly one environment variable (`env` / `env_names[0]`).
+ * Aliases are empty. `readEnv` consults only that name.
  */
 
 export interface ConfigStorage {
@@ -45,22 +45,6 @@ export interface ConfigSchema {
   keys: readonly ConfigKey[];
 }
 
-/** Names this package refuses, matching the Python registry's retired set. */
-export const RETIRED_ENV_NAMES: readonly string[] = Object.freeze([
-  "E2B_API_KEY",
-  "SANDBOX_API_KEY",
-  "E2B_API_URL",
-  "SANDBOX_REGION",
-  "AccessKey",
-  "AccessSecret",
-  "EBX_ALICLOUD_EXPRESS_ACCESS_KEY_ID",
-  "EBX_ALICLOUD_EXPRESS_REGION",
-  "OPENAI_API_KEY",
-  "DASHSCOPE_API_KEY",
-]);
-
-const RETIRED = new Set<string>(RETIRED_ENV_NAMES);
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -92,8 +76,8 @@ function loadSchema(): ConfigSchema {
     if (!Array.isArray(raw.aliases) || raw.aliases.length !== 0) {
       throw new Error(`${id} must not declare aliases`);
     }
-    if (RETIRED.has(raw.env) || seenEnv.has(raw.env)) {
-      throw new Error(`${id} env ${raw.env} is retired or duplicated`);
+    if (seenEnv.has(raw.env)) {
+      throw new Error(`${id} env ${raw.env} is duplicated`);
     }
     seenEnv.add(raw.env);
   }
@@ -118,20 +102,14 @@ export function envName(key: string, scope = "core"): string {
   return found.env;
 }
 
-/**
- * Whether `name` is the official environment variable of some key.
- * Retired names (`E2B_API_KEY`, `SANDBOX_API_KEY`, `AccessKey`,
- * `EBX_ALICLOUD_EXPRESS_ACCESS_KEY_ID`, and the rest of {@link RETIRED_ENV_NAMES})
- * are never accepted.
- */
+/** Whether `name` is the official environment variable of some key. */
 export function acceptsEnvName(name: string): boolean {
-  if (RETIRED.has(name)) return false;
   return CONFIG_KEYS.some((key) => key.env === name);
 }
 
 /**
  * Read one key from an environment map. Only the canonical name is consulted.
- * A blank or whitespace-only value is unset. Retired names in `environ` are ignored.
+ * A blank or whitespace-only value is unset.
  */
 export function readEnv(
   key: string,

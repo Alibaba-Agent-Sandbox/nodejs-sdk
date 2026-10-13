@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 
 import { ConnectionError, ServerAPIError } from "./errors.js";
 
-/** Default in-sandbox HTTP port (`easy_sandbox.server`). */
+/** Default in-sandbox HTTP port (`agent_sandbox.server`). */
 export const DEFAULT_SERVER_PORT = 9000;
 
 const SYNC_TIMEOUT_SLACK = 10;
@@ -66,11 +66,16 @@ function errorFromResponse(status: number, body: unknown, endpoint: string): Ser
 }
 
 /**
- * HTTP client for one in-sandbox `easy_sandbox.server` process.
+ * HTTP client for one in-sandbox `agent_sandbox.server` process.
  *
  * This slice talks to the same routes the local Python agent loop uses:
  * `GET /health`, `POST /shell`, `POST /files/upload-stream`, and
- * `GET /files/download-stream`. It does not create cloud sandboxes.
+ * `GET /files/download-stream`. Those endpoints are on by default. Opt-in
+ * groups (`dev_tools`, `browser`, `agents`) are enabled only with
+ * `ABX_SERVER_ENABLED_GROUPS`. A bearer token, when set, is sent as
+ * `Authorization: Bearer` (the server's `ABX_SERVER_TOKEN`). Agents responses
+ * carry `X-Agent-Sandbox-*` headers; this slice does not call those routes.
+ * It does not create cloud sandboxes.
  */
 export class ServerClient {
   readonly baseUrl: string;
