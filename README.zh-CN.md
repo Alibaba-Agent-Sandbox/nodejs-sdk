@@ -13,19 +13,23 @@
 
 ## 安装
 
-```bash
-npm install @agent-sandbox/sdk
-```
-
-发布入口是 `dist/`。在检出的仓库里：
+`@agent-sandbox/sdk` 尚未发布到公共 npm（2026-10-18 查询包元数据返回 HTTP 404）。
+请从独立检出的源码构建 `dist/` 入口：
 
 ```bash
-npm install
-npm test
-node examples/agent-loop.mjs
+git clone https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk.git
+cd nodejs-sdk
+npm ci
+npm run build
 ```
 
-`npm test` 会先构建，再跑 `node:test`。
+在其他项目中使用下方的包名导入示例时，先用 `npm install ../nodejs-sdk`
+把构建好的检出目录作为本地依赖安装（请调整路径）。
+公共安装命令 `npm install @agent-sandbox/sdk` 适用于正式发布之后。
+
+验证时运行 `npm run typecheck` 和 `npm test`。后者先构建，再执行 `node:test`，
+其中包含真实本地服务循环，需要 `python3` 环境已安装 `agent-sandbox-server`，不需要云凭据。
+新增 PR 工作流使用固定的 Python server 源码，检查 Node.js 20 和 22。
 
 ## ServerClient
 
@@ -58,6 +62,11 @@ await server.close();
 ## 配置名
 
 `src/config-keys.json` 是规范列表，来自 `python -m agent_sandbox.utils.config_keys --json`。每个 key 只有一个环境变量，没有别名。`readEnv` 只读这个名字。
+
+`configSchema.reserved_provider_ids` 遵循
+[Python 注册表](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/145341d462df2f4753c03a62365114f1872acd1a/client-sdk/src/agent_sandbox/utils/config_keys.py)：
+内置及核心标识仍保留，可安装的目录提供方标识 `e2b` 不再保留。
+提供方执行由 Python SDK 和 `abx` 负责。
 
 产品 key 使用 `ABX_` 前缀：`ABX_SANDBOX_API_KEY`、`ABX_SANDBOX_BASE_URL`、`ABX_SANDBOX_DOMAIN`、`ABX_PROVIDER`。
 

@@ -14,6 +14,21 @@ const source = JSON.parse(
   readFileSync(new URL("../src/config-keys.json", import.meta.url), "utf8"),
 );
 
+test("reserved provider ids keep the E2B catalog id available", () => {
+  assert.equal(configSchema.reserved_provider_ids.includes("e2b"), false);
+  assert.deepEqual(configSchema.reserved_provider_ids, [
+    "alicloud-express",
+    "default",
+    "all",
+    "none",
+    "builtin",
+    "shortcuts",
+    "core",
+    "transport",
+    "providers",
+  ]);
+});
+
 test("fixture is copied through with one env name per key", () => {
   assert.equal(configSchema.schema_version, 1);
   assert.equal(CONFIG_KEYS.length, source.keys.length);

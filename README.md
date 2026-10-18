@@ -13,19 +13,24 @@ It is **not** a port of `Sandbox.create`, cloud providers, or the server SDK. Cr
 
 ## Install
 
-```bash
-npm install @agent-sandbox/sdk
-```
-
-The published entry is `dist/`. From a checkout:
+`@agent-sandbox/sdk` is not published to public npm yet (package metadata returned
+HTTP 404 on 2026-10-18). Build the `dist/` entry from a checkout:
 
 ```bash
-npm install
-npm test
-node examples/agent-loop.mjs
+git clone https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk.git
+cd nodejs-sdk
+npm ci
+npm run build
 ```
 
-`npm test` builds first, then runs `node:test`.
+To use the package-name imports below from another project, install that built
+checkout as a local dependency with `npm install ../nodejs-sdk` (adjust the path).
+The public command `npm install @agent-sandbox/sdk` applies after publication.
+
+For validation, run `npm run typecheck` and `npm test`. The latter builds first,
+then runs `node:test`, including a real local server loop. That loop requires
+`agent-sandbox-server` in the `python3` environment; it needs no cloud credentials.
+The PR workflow checks Node.js 20 and 22 with a pinned Python server source.
 
 ## ServerClient
 
@@ -58,6 +63,11 @@ await server.close();
 ## Configuration names
 
 `src/config-keys.json` is the canonical list, exported from `python -m agent_sandbox.utils.config_keys --json`. Each key has exactly one environment variable. There are no aliases. `readEnv` reads only that name.
+
+`configSchema.reserved_provider_ids` follows the
+[Python registry](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/145341d462df2f4753c03a62365114f1872acd1a/client-sdk/src/agent_sandbox/utils/config_keys.py):
+built-in/core identifiers stay reserved, while the installable catalog id `e2b`
+is available. Provider execution belongs to the Python SDK and `abx`.
 
 Product keys use the `ABX_` prefix: `ABX_SANDBOX_API_KEY`, `ABX_SANDBOX_BASE_URL`, `ABX_SANDBOX_DOMAIN`, `ABX_PROVIDER`.
 
