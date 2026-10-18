@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -27,11 +29,11 @@ function fromPythonRepr(literal) {
   return out;
 }
 
-function runExample() {
+function runExample(extraEnv = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(root, "examples/agent-loop.mjs")], {
       cwd: root,
-      env: process.env,
+      env: { ...process.env, ...extraEnv },
     });
     let stdout = "";
     let stderr = "";
@@ -49,6 +51,26 @@ function runExample() {
     });
   });
 }
+
+test("agent loop preserves caller Python source configuration", { timeout: 60_000, skip: process.platform === "win32" }, async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "node-sdk-pythonpath-"));
+  const quote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+  try {
+    const bin = path.join(directory, "bin");
+    const source = path.join(directory, "explicit-source");
+    await mkdir(bin);
+    await mkdir(source);
+    const record = path.join(directory, "pythonpath.txt");
+    const python = execFileSync("python3", ["-c", "import sys;print(sys.executable)"], { encoding: "utf8" }).trim();
+    await writeFile(path.join(bin, "python3"), `#!/bin/sh\nprintf '%s' "$PYTHONPATH" > ${quote(record)}\nexec ${quote(python)} "$@"\n`, { mode: 0o755 });
+    const expected = [source, process.env.PYTHONPATH ?? ""].filter(Boolean).join(path.delimiter);
+    const result = await runExample({ PATH: bin + path.delimiter + process.env.PATH, PYTHONPATH: expected });
+    assert.equal(result.code, 0, result.stdout + result.stderr);
+    assert.equal(await readFile(record, "utf8"), expected);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test("agent loop stdout contains 4\\n and the read text is answer=4\\n", { timeout: 60_000 }, async () => {
   const { code, stdout, stderr } = await runExample();

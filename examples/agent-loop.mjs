@@ -15,11 +15,6 @@ import { fileURLToPath } from "node:url";
 
 import { ServerClient } from "../dist/index.js";
 
-const PYTHONPATH = [
-  "/workspace/python-sdk/server-sdk/src",
-  "/workspace/python-sdk/client-sdk/src",
-].join(path.delimiter);
-
 const DROPPED_ENV = [
   "ABX_SERVER_TOKEN",
   "ABX_SERVER_POLICY",
@@ -109,8 +104,6 @@ function childEnv(baseDir) {
   }
   for (const name of DROPPED_ENV) delete env[name];
   env.ABX_SERVER_BASE_DIR = baseDir;
-  const prefix = [PYTHONPATH, env.PYTHONPATH ?? ""].filter(Boolean);
-  env.PYTHONPATH = prefix.join(path.delimiter);
   return env;
 }
 

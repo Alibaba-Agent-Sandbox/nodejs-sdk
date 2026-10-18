@@ -21,3 +21,5 @@ state. A local/runtime result is not cloud acceptance or package publication.
 
 - [Configuration reservations and installation](notes/proposed/process/2026-10-18-config-provider-reservations.md)
 - [Verification](evidence/verify/2026-10-18-config-provider-reservations.md)
+
+- [Portable source installation](notes/proposed/process/2026-10-18-portable-source-installation.md) · [verification](evidence/verify/2026-10-18-portable-source-installation.md)
