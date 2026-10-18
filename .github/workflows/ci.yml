@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Node.js ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.15"
+      - name: Check out the matching Python server source
+        uses: actions/checkout@v4
+        with:
+          repository: Alibaba-Agent-Sandbox/python-sdk
+          ref: 145341d462df2f4753c03a62365114f1872acd1a
+          path: python-sdk
+      - name: Install the local server prerequisite
+        run: python -m pip install ./python-sdk/server-sdk
+      - name: Compare the complete Python and Node configuration schema
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          exported = subprocess.check_output(
+              [sys.executable, "python-sdk/client-sdk/src/agent_sandbox/utils/config_keys.py", "--json"],
+              text=True,
+          )
+          assert json.loads(exported) == json.loads(Path("src/config-keys.json").read_text())
+          print("Complete Python/Node configuration schema matches")
+          PY
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
