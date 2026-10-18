@@ -13,24 +13,28 @@ It is **not** a port of `Sandbox.create`, cloud providers, or the server SDK. Cr
 
 ## Install
 
-`@agent-sandbox/sdk` is not published to public npm yet (package metadata returned
-HTTP 404 on 2026-10-18). Build the `dist/` entry from a checkout:
+On2026-10-18 the public npm metadata endpoint for `@agent-sandbox/sdk` returned404.
+Build the source package until the matching release is available on your registry:
 
 ```bash
 git clone https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk.git
 cd nodejs-sdk
 npm ci
 npm run build
+npm pack
 ```
 
-To use the package-name imports below from another project, install that built
-checkout as a local dependency with `npm install ../nodejs-sdk` (adjust the path).
-The public command `npm install @agent-sandbox/sdk` applies after publication.
+This checkout's version0.1.0 produces `agent-sandbox-sdk-0.1.0.tgz` with built
+`dist/` exports. In your application, install that generated archive:
 
-For validation, run `npm run typecheck` and `npm test`. The latter builds first,
-then runs `node:test`, including a real local server loop. That loop requires
-`agent-sandbox-server` in the `python3` environment; it needs no cloud credentials.
-The PR workflow checks Node.js 20 and 22 with a pinned Python server source.
+```bash
+npm install /absolute/path/to/agent-sandbox-sdk-0.1.0.tgz
+```
+
+When the release exists on your configured registry, `npm install @agent-sandbox/sdk`
+uses the same import surface. No publication is implied by this source recipe.
+For local development, `npm test` builds and runs `node:test`; the real local
+example needs the Python server installed as described in [examples](examples/README.md).
 
 ## ServerClient
 
@@ -62,6 +66,8 @@ await server.close();
 
 ## Configuration names
 
+The table exports configuration names. `readEnv` only reads a value; it does not apply these fields to `ServerClient`. Legacy retry fields do not enable builtin SDK HTTP retries. See the [shared compatibility decision](https://github.com/Alibaba-Agent-Sandbox/python-sdk/issues/60).
+
 `src/config-keys.json` is the canonical list, exported from `python -m agent_sandbox.utils.config_keys --json`. Each key has exactly one environment variable. There are no aliases. `readEnv` reads only that name.
 
 `configSchema.reserved_provider_ids` follows the
@@ -89,7 +95,7 @@ readEnv("sandbox_api_key", process.env);
 | `sandbox_domain` | core | `ABX_SANDBOX_DOMAIN` | Envd data-plane domain |
 | `http_timeout` | core | `ABX_HTTP_TIMEOUT` | HTTP request timeout in seconds |
 | `http2` | core | `ABX_HTTP2` | Use HTTP/2 |
-| `max_retries` | core | `ABX_MAX_RETRIES` | Maximum automatic retries |
+| `max_retries` | core | `ABX_MAX_RETRIES` | Legacy configuration name; no HTTP retry policy |
 | `max_connections` | core | `ABX_MAX_CONNECTIONS` | |
 | `max_keepalive_connections` | core | `ABX_MAX_KEEPALIVE_CONNECTIONS` | |
 | `keepalive_expiry` | core | `ABX_KEEPALIVE_EXPIRY` | |

@@ -13,23 +13,27 @@
 
 ## 安装
 
-`@agent-sandbox/sdk` 尚未发布到公共 npm（2026-10-18 查询包元数据返回 HTTP 404）。
-请从独立检出的源码构建 `dist/` 入口：
+2026-10-18 查询公开 npm 的 `@agent-sandbox/sdk` 元数据返回404。
+配置的包索引具备对应版本前，请从源码构建安装包：
 
 ```bash
 git clone https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk.git
 cd nodejs-sdk
 npm ci
 npm run build
+npm pack
 ```
 
-在其他项目中使用下方的包名导入示例时，先用 `npm install ../nodejs-sdk`
-把构建好的检出目录作为本地依赖安装（请调整路径）。
-公共安装命令 `npm install @agent-sandbox/sdk` 适用于正式发布之后。
+当前源码版本0.1.0 生成 `agent-sandbox-sdk-0.1.0.tgz`，包含构建后的 `dist/` 导出。
+在应用项目中安装生成的归档：
 
-验证时运行 `npm run typecheck` 和 `npm test`。后者先构建，再执行 `node:test`，
-其中包含真实本地服务循环，需要 `python3` 环境已安装 `agent-sandbox-server`，不需要云凭据。
-新增 PR 工作流使用固定的 Python server 源码，检查 Node.js 20 和 22。
+```bash
+npm install /absolute/path/to/agent-sandbox-sdk-0.1.0.tgz
+```
+
+配置的包索引具备对应发布后，可以使用 `npm install @agent-sandbox/sdk`，导入接口一致。
+本说明不代表包已经发布。开发时 `npm test` 会构建并运行 `node:test`；真实本地示例
+需要按[示例说明](examples/README.md)先安装 Python 服务端。
 
 ## ServerClient
 
@@ -61,6 +65,8 @@ await server.close();
 
 ## 配置名
 
+此表导出配置名称；`readEnv` 只读取值，不会把这些字段自动应用到 `ServerClient`。旧重试字段不会启用内置 SDK HTTP 重试。见[共享兼容边界](https://github.com/Alibaba-Agent-Sandbox/python-sdk/issues/60)。
+
 `src/config-keys.json` 是规范列表，来自 `python -m agent_sandbox.utils.config_keys --json`。每个 key 只有一个环境变量，没有别名。`readEnv` 只读这个名字。
 
 `configSchema.reserved_provider_ids` 遵循
@@ -88,7 +94,7 @@ readEnv("sandbox_api_key", process.env);
 | `sandbox_domain` | core | `ABX_SANDBOX_DOMAIN` | envd 数据面域名 |
 | `http_timeout` | core | `ABX_HTTP_TIMEOUT` | HTTP 请求超时（秒） |
 | `http2` | core | `ABX_HTTP2` | 启用 HTTP/2 |
-| `max_retries` | core | `ABX_MAX_RETRIES` | 最大自动重试次数 |
+| `max_retries` | core | `ABX_MAX_RETRIES` | 兼容保留的配置名称；不代表 HTTP 重试策略 |
 | `max_connections` | core | `ABX_MAX_CONNECTIONS` | |
 | `max_keepalive_connections` | core | `ABX_MAX_KEEPALIVE_CONNECTIONS` | |
 | `keepalive_expiry` | core | `ABX_KEEPALIVE_EXPIRY` | |
