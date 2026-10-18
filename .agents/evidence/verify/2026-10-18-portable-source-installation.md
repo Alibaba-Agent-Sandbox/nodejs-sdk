@@ -16,3 +16,8 @@ license/notices. Fresh application local-archive install and public imports PASS
 Changed Markdown local links/ADR format and workflow parse PASS. Configuration
 JSON/client implementation unchanged. Hosted Node20/22 CI remains required.
 No public package publication or cloud provider acceptance is claimed.
+
+Final diff review retained the existing full Python/Node configuration-schema
+comparison in the workflow (not only HTTP/runtime tests). The accepted immutable
+Python revision exports a byte-equivalent parsed JSON table locally. The
+intermediate workflow omission is corrected before merge; no gate is weakened.
