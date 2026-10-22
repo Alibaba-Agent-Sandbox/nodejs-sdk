@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- Retired retry configuration exports and duplicate migration-phase storage descriptors; use the current Python-owned configuration schema.
+
 ### Fixed
 
 - Preserve caller Python source configuration in the local runtime example; document usable source-package installation and validate real runtime behavior on Node20/22 CI. Clarify configuration-name exports and retry compatibility.

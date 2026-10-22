@@ -32,7 +32,7 @@ test("reserved provider ids keep the E2B catalog id available", () => {
 test("fixture is copied through with one env name per key", () => {
   assert.equal(configSchema.schema_version, 1);
   assert.equal(CONFIG_KEYS.length, source.keys.length);
-  assert.equal(CONFIG_KEYS.length, 23);
+  assert.equal(CONFIG_KEYS.length, 21);
   for (const [index, key] of CONFIG_KEYS.entries()) {
     const raw = source.keys[index];
     assert.equal(key.key, raw.key);
@@ -89,4 +89,11 @@ test("readEnv consults only the canonical name", () => {
     readEnv("access_key_id", { NOT_A_CONFIG_KEY: "no" }, "alicloud-express"),
     undefined,
   );
+});
+
+
+test("retired retry configuration names are not exported", () => {
+  for (const key of ["max_retries", "retry_base_delay"]) assert.throws(() => envName(key), /Unknown config key/);
+  assert.equal(acceptsEnvName("ABX_MAX_RETRIES"), false);
+  assert.equal(acceptsEnvName("ABX_RETRY_BASE_DELAY"), false);
 });

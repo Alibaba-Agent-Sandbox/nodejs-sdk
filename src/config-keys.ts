@@ -27,8 +27,7 @@ export interface ConfigKey {
   aliases: readonly unknown[];
   env_names: readonly string[];
   toml_section: string | null;
-  storage_phase1: ConfigStorage | null;
-  storage_phase2: ConfigStorage | null;
+  storage: ConfigStorage | null;
   default: unknown;
   choices: readonly string[];
   group: string;
