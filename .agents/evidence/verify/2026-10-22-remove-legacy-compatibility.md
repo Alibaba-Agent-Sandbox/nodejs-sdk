@@ -25,3 +25,7 @@ Required remote CI, review and merge are not established by local results. Initi
 ## Cleanup
 
 Local fixtures use owned temporary resources. The Python cloud fixture tracks and cleans its own sandbox resources. No raw credentials or sensitive logs are included. Native checks that did not execute are not passes.
+
+## Remote delivery update
+
+The first Node20/22 CI run compared against the previous pinned Python schema and failed at that comparison. CI now pins the published Python cleanup source commit; the complete local Python/Node schema comparison passes. The consumer will not merge before the Python contract.
