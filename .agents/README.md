@@ -24,4 +24,6 @@ state. A local/runtime result is not cloud acceptance or package publication.
 
 - [Portable source installation](notes/proposed/process/2026-10-18-portable-source-installation.md) · [verification](evidence/verify/2026-10-18-portable-source-installation.md)
 
-- [Current configuration contract](notes/proposed/architecture/2026-10-22-remove-legacy-compatibility.md) · [verification](evidence/verify/2026-10-22-remove-legacy-compatibility.md)
+- [Current configuration contract](notes/implemented/architecture/2026-10-22-remove-legacy-compatibility.md) · [verification](evidence/verify/2026-10-22-remove-legacy-compatibility.md)
+
+- [Compatibility cleanup remote acceptance](evidence/verify/2026-10-22-remove-legacy-acceptance.md)

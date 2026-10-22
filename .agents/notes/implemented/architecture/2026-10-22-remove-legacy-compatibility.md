@@ -1,6 +1,6 @@
 # Decision: Export only current configuration names
 
-Status: proposed
+Status: implemented
 
 ## Problem
 The maintainer requests removing old project compatibility because the project has not formally released. The exported retry configuration fields do not drive an HTTP retry policy, and duplicate storage descriptors only represent former migration phases.
@@ -29,3 +29,9 @@ Run lockfile installation, type checking, all package tests and the local Python
 - [Verification](../../../evidence/verify/2026-10-22-remove-legacy-compatibility.md)
 
 Issue: https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/issues/6
+
+## Acceptance
+
+Verified merged implementation: https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/pull/7. The source merge commit is `970fc6ed6f4b89e167338ba4c9611ec475651a8c`.
+
+- [Remote acceptance](../../../evidence/verify/2026-10-22-remove-legacy-acceptance.md)
