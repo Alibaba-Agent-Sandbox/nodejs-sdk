@@ -65,7 +65,7 @@ await server.close();
 
 ## 配置名
 
-此表导出配置名称；`readEnv` 只读取值，不会把这些字段自动应用到 `ServerClient`。旧重试字段不会启用内置 SDK HTTP 重试。见[共享兼容边界](https://github.com/Alibaba-Agent-Sandbox/python-sdk/issues/60)。
+此表导出配置名称；`readEnv` 只读取值，不会把这些字段自动应用到 `ServerClient`。已移除不生效的旧重试配置名称。
 
 `src/config-keys.json` 是规范列表，来自 `python -m agent_sandbox.utils.config_keys --json`。每个 key 只有一个环境变量，没有别名。`readEnv` 只读这个名字。
 
@@ -94,12 +94,10 @@ readEnv("sandbox_api_key", process.env);
 | `sandbox_domain` | core | `ABX_SANDBOX_DOMAIN` | envd 数据面域名 |
 | `http_timeout` | core | `ABX_HTTP_TIMEOUT` | HTTP 请求超时（秒） |
 | `http2` | core | `ABX_HTTP2` | 启用 HTTP/2 |
-| `max_retries` | core | `ABX_MAX_RETRIES` | 兼容保留的配置名称；不代表 HTTP 重试策略 |
 | `max_connections` | core | `ABX_MAX_CONNECTIONS` | |
 | `max_keepalive_connections` | core | `ABX_MAX_KEEPALIVE_CONNECTIONS` | |
 | `keepalive_expiry` | core | `ABX_KEEPALIVE_EXPIRY` | |
 | `ws_ping_interval` | core | `ABX_WS_PING_INTERVAL` | |
-| `retry_base_delay` | core | `ABX_RETRY_BASE_DELAY` | |
 | `log_level` | core | `ABX_LOG_LEVEL` | 日志级别 |
 | `default_template` | core | `ABX_DEFAULT_TEMPLATE` | 未指定模板时使用的模板 |
 | `github_token` | core | `GITHUB_TOKEN` | 用于模板索引的 GitHub Token |
@@ -122,3 +120,5 @@ readEnv("sandbox_api_key", process.env);
 ## 许可
 
 Apache-2.0。见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
+
+Configuration storage uses one `storage` descriptor. / 配置存储统一使用 `storage` 字段。

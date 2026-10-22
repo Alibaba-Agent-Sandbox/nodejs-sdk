@@ -66,7 +66,7 @@ await server.close();
 
 ## Configuration names
 
-The table exports configuration names. `readEnv` only reads a value; it does not apply these fields to `ServerClient`. Legacy retry fields do not enable builtin SDK HTTP retries. See the [shared compatibility decision](https://github.com/Alibaba-Agent-Sandbox/python-sdk/issues/60).
+The table exports configuration names. `readEnv` only reads a value; it does not apply these fields to `ServerClient`. Retired retry settings are not exported.
 
 `src/config-keys.json` is the canonical list, exported from `python -m agent_sandbox.utils.config_keys --json`. Each key has exactly one environment variable. There are no aliases. `readEnv` reads only that name.
 
@@ -95,12 +95,10 @@ readEnv("sandbox_api_key", process.env);
 | `sandbox_domain` | core | `ABX_SANDBOX_DOMAIN` | Envd data-plane domain |
 | `http_timeout` | core | `ABX_HTTP_TIMEOUT` | HTTP request timeout in seconds |
 | `http2` | core | `ABX_HTTP2` | Use HTTP/2 |
-| `max_retries` | core | `ABX_MAX_RETRIES` | Legacy configuration name; no HTTP retry policy |
 | `max_connections` | core | `ABX_MAX_CONNECTIONS` | |
 | `max_keepalive_connections` | core | `ABX_MAX_KEEPALIVE_CONNECTIONS` | |
 | `keepalive_expiry` | core | `ABX_KEEPALIVE_EXPIRY` | |
 | `ws_ping_interval` | core | `ABX_WS_PING_INTERVAL` | |
-| `retry_base_delay` | core | `ABX_RETRY_BASE_DELAY` | |
 | `log_level` | core | `ABX_LOG_LEVEL` | Log level |
 | `default_template` | core | `ABX_DEFAULT_TEMPLATE` | Template used when none is given |
 | `github_token` | core | `GITHUB_TOKEN` | GitHub token for the template index |
@@ -123,3 +121,5 @@ readEnv("sandbox_api_key", process.env);
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+Configuration storage uses one `storage` descriptor. / 配置存储统一使用 `storage` 字段。
