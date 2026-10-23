@@ -123,3 +123,18 @@ readEnv("sandbox_api_key", process.env);
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 Configuration storage uses one `storage` descriptor. / 配置存储统一使用 `storage` 字段。
+
+For a provider port gateway, pass the exact sandbox/port URL including its proxy
+prefix and query. The client preserves existing query bytes and appends operation
+parameters without replacing gateway parameters. All redirects are rejected,
+including redirects to another sandbox on the same origin. URL userinfo and
+request paths that escape the bound prefix are rejected.
+
+Use `token` for the application service token and `gatewayHeaders` for the
+provider gateway's headers. `headers` contains other application headers. Header
+names must not overlap between groups; an existing `Authorization` header cannot
+be combined with `token`. Authority and transport headers cannot be overridden.
+The public `baseUrl` and connection errors omit query credentials. Never pass a
+provider control-plane API key as the application token. This client accepts
+prefix-bound HTTP URLs; operation-specific signed path bindings must use the provider
+adapter's operation transport. This prefix client does not accept those bindings.

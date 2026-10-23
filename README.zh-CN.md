@@ -122,3 +122,14 @@ readEnv("sandbox_api_key", process.env);
 Apache-2.0。见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
 
 Configuration storage uses one `storage` descriptor. / 配置存储统一使用 `storage` 字段。
+
+通过提供方端口网关访问时，应传入包含完整代理前缀、沙箱和端口标识及查询参数
+的 URL。客户端保留原查询参数的字节，仅追加操作参数，禁止覆盖网关参数。
+所有重定向均会拒绝，包括同一域名下跳转到另一沙箱；URL 用户信息及越出绑定
+前缀的操作路径也会拒绝。
+
+`token` 用于应用服务令牌，`gatewayHeaders` 用于平台网关请求头，`headers`
+用于其他应用请求头。各组请求头名称不能重叠；已有 `Authorization` 请求头时
+不能再传入 `token`。不能覆盖 Host 等寻址及传输请求头。公开 `baseUrl` 和连接
+错误省略查询凭据。不要把平台控制面 API Key 作为应用令牌传入。本客户端使用
+绑定代理前缀的 HTTP URL；按操作签名的路径绑定需要使用提供方适配器的逐操作传输接口，不能传入本前缀客户端。

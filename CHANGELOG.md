@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- Preserve sandbox proxy prefixes and signed query bytes; reject redirects, URL userinfo, escaping paths and credential/header collisions. Separate gateway headers from the application token and omit signed query credentials from diagnostics.
+
 - Preserve caller Python source configuration in the local runtime example; document usable source-package installation and validate real runtime behavior on Node20/22 CI. Clarify configuration-name exports and retry compatibility.
 - Match the Python configuration schema by leaving the installable `e2b` catalog
   provider id unreserved while preserving all built-in/core reservations.

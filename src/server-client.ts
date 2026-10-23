@@ -12,6 +12,8 @@ export interface ServerClientOptions {
   token?: string | null;
   /** Extra headers on every request. */
   headers?: Readonly<Record<string, string>>;
+  /** Gateway authentication is separate from the application's bearer token. */
+  gatewayHeaders?: Readonly<Record<string, string>>;
   /** Default per-request timeout in seconds. */
   timeout?: number;
 }
@@ -83,16 +85,35 @@ export class ServerClient {
   readonly files: ServerFilesApi;
   readonly process: ServerProcessApi;
 
+  #endpoint: URL;
   #token: string | undefined;
   #headers: Record<string, string>;
   #closed = false;
   #controllers = new Set<AbortController>();
 
   constructor(baseUrl: string, options: ServerClientOptions = {}) {
-    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    let endpoint: URL;
+    try { endpoint = new URL(baseUrl); } catch { throw new TypeError("Invalid sandbox server URL"); }
+    if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.hash) {
+      throw new TypeError("Sandbox server URL requires HTTP(S), without userinfo or fragment");
+    }
+    this.#endpoint = endpoint;
+    // Keep signed query credentials out of object inspection and connection errors.
+    this.baseUrl = endpoint.origin + endpoint.pathname.replace(/\/+$/, "");
     this.timeout = options.timeout ?? 30;
     this.#token = options.token ?? undefined;
-    this.#headers = { ...(options.headers ?? {}) };
+    const headers = new Headers();
+    for (const group of [options.headers ?? {}, options.gatewayHeaders ?? {}]) {
+      for (const [name, value] of Object.entries(group)) {
+        if (["host", ":authority", "connection", "transfer-encoding", "content-length", "proxy-authorization"].includes(name.toLowerCase())) {
+          throw new TypeError("Authority and transport headers cannot be overridden");
+        }
+        if (headers.has(name)) throw new TypeError("Application and gateway headers must not overlap");
+        headers.set(name, value);
+      }
+    }
+    if (this.#token && headers.has("authorization")) throw new TypeError("Application token conflicts with an existing authentication header");
+    this.#headers = Object.fromEntries(headers);
     this.files = new ServerFilesApi(this);
     this.process = new ServerProcessApi(this);
   }
@@ -134,11 +155,22 @@ export class ServerClient {
     if (this.#closed) {
       throw new ConnectionError(`ServerClient is closed (${this.baseUrl})`);
     }
-    const url = new URL(path.replace(/^\//, ""), `${this.baseUrl}/`);
+    let segments: string[];
+    try { segments = path.replace(/^\//, "").split("/").map(decodeURIComponent); }
+    catch { throw new TypeError("Invalid sandbox operation path"); }
+    if (!path.startsWith("/") || path.startsWith("//") || /[?#\\]/.test(path) || segments.some(segment => !segment || segment === "." || segment === ".." || /[\\/]/.test(segment))) {
+      throw new TypeError("Sandbox operation path must stay within the bound server prefix");
+    }
+    const url = new URL(this.#endpoint);
+    url.pathname = url.pathname.replace(/\/+$/, "") + path;
     if (options.params) {
+      const appended = new URLSearchParams();
       for (const [key, value] of Object.entries(options.params)) {
-        url.searchParams.set(key, String(value));
+        if (url.searchParams.has(key)) throw new TypeError("Operation parameters must not replace gateway query parameters");
+        appended.append(key, String(value));
       }
+      const suffix = appended.toString();
+      if (suffix) url.search += (url.search ? "&" : "?") + suffix;
     }
     const headers = this.authHeaders();
     let body: string | undefined;
@@ -155,7 +187,7 @@ export class ServerClient {
     ]);
     let response: Response;
     try {
-      response = await fetch(url, { method, headers, body, signal });
+      response = await fetch(url, { method, headers, body, signal, redirect: "manual" });
     } catch (err) {
       if (this.#closed || controller.signal.aborted) {
         throw new ConnectionError(`ServerClient is closed (${this.baseUrl})`);
@@ -166,14 +198,17 @@ export class ServerClient {
           `Timed out talking to the sandbox server at ${this.baseUrl}`,
         );
       }
-      const detail = err instanceof Error ? err.message : String(err);
-      throw new ConnectionError(
-        `Could not reach the sandbox server at ${this.baseUrl}: ${detail}`,
-      );
+      throw new ConnectionError(`Could not reach the sandbox server at ${this.baseUrl}`);
     } finally {
       this.#controllers.delete(controller);
     }
 
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new ServerAPIError("Sandbox server redirects are not allowed", {
+        statusCode: response.status, errorType: "BindingError", endpoint,
+      });
+    }
     const text = await response.text();
     let parsed: unknown = null;
     if (text) {
