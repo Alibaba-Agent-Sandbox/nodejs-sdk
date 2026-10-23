@@ -146,3 +146,115 @@ test("HTTP errors raise ServerAPIError and a closed port is unhealthy", async ()
   await closed.close();
   await assert.rejects(() => closed.process.shell("true"), ConnectionError);
 });
+
+test("bound proxy prefix and signed query bytes survive operation joins", async () => {
+  const hits = [];
+  const server = await listen(async (req, res) => {
+    hits.push({ url: req.url, app: req.headers.authorization, gateway: req.headers['x-gateway-token'] });
+    res.end(JSON.stringify({ status: 'ok', content_base64: '' }));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}/proxy/sandbox-123/9000/?sig=a%2Fb%20c`, {
+    token: 'application-token', gatewayHeaders: { 'X-Gateway-Token': 'gateway-token' },
+  });
+  try {
+    assert.equal(await client.health(), true);
+    await client.files.download('/tmp/a b');
+    assert.equal(hits[0].url, '/proxy/sandbox-123/9000/health?sig=a%2Fb%20c');
+    assert.equal(hits[1].url, '/proxy/sandbox-123/9000/files/download-stream?sig=a%2Fb%20c&path=%2Ftmp%2Fa+b');
+    assert.equal(hits[0].app, 'Bearer application-token');
+    assert.equal(hits[0].gateway, 'gateway-token');
+    assert.ok(!client.baseUrl.includes('sig='));
+    await assert.rejects(client.send('x', 'GET', '/health', { params: { sig: 'replacement' } }), TypeError);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("userinfo, authority overrides and overlapping credentials are rejected before a request", () => {
+  for (const url of ['http://user:secret@localhost:9000', 'file:///tmp/server', 'http://localhost:9000/#fragment']) {
+    assert.throws(() => new ServerClient(url), TypeError);
+  }
+  for (const name of ['Host', ':authority', 'Forwarded', 'X-Forwarded-Host', 'X-Forwarded-Proto', 'X-Forwarded-Port', 'Proxy-Authorization', 'Content-Length']) {
+    assert.throws(() => new ServerClient('http://localhost:9000', { headers: { [name]: 'bad' } }), TypeError);
+  }
+  assert.throws(() => new ServerClient('http://localhost:9000', { token: 'app', gatewayHeaders: { authorization: 'gateway' } }), TypeError);
+  assert.throws(() => new ServerClient('http://localhost:9000', { headers: { 'X-Token': 'app' }, gatewayHeaders: { 'x-token': 'gateway' } }), TypeError);
+});
+
+test("redirects cannot move even same-origin credentials to a different sandbox", async () => {
+  const hits = [];
+  const server = await listen(async (req, res) => {
+    hits.push(req.url);
+    res.statusCode = 307;
+    res.setHeader('location', '/proxy/another-sandbox/9000/health?stolen=1');
+    res.end();
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}/proxy/owned/9000?sig=secret`, { token: 'app' });
+  try {
+    await assert.rejects(client.send('health', 'GET', '/health'), error => error instanceof ServerAPIError && error.statusCode === 307 && !String(error).includes('secret'));
+    assert.equal(hits.length, 1);
+    for (const path of ['//foreign.test/x', '/../other', '/%2e%2e/other', '/health?query', '/a%2fb', '/a\\b']) {
+      await assert.rejects(client.send('x', 'GET', path), TypeError);
+    }
+    assert.equal(hits.length, 1);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("connection errors and object inspection do not disclose signed URL queries", async () => {
+  const { inspect } = await import('node:util');
+  const client = new ServerClient('http://127.0.0.1:1/proxy/owned?token=signed-secret');
+  assert.ok(!inspect(client).includes('signed-secret'));
+  await assert.rejects(client.send('health', 'GET', '/health'), error => error instanceof ConnectionError && !String(error).includes('signed-secret'));
+  await client.close();
+});
+
+test("control characters and recursively encoded paths cannot escape a real sandbox gateway", async () => {
+  const hits = [];
+  const server = await listen(async (req, res) => {
+    hits.push({ url: req.url, token: req.headers.authorization });
+    res.end(JSON.stringify({ status: 'ok' }));
+  });
+  const prefix = `http://127.0.0.1:${server.port}/proxy/owned/9000`;
+  const client = new ServerClient(prefix + '?sig=fixture', { token: 'application-token' });
+  try {
+    const attacks = [
+      '/\t../\t../victim/9000/health', '/\r../\n../victim/9000/health',
+      '/%09../%09../victim/9000/health', '/%2509../%2509../victim/9000/health',
+      '/%252e%252e/%252e%252e/victim/9000/health', '/a%252fb', '/a%255cb',
+      '/\x00health', '/%00health', '/%2500health', '/\x7fhealth', '/%257fhealth',
+    ];
+    for (const path of attacks) {
+      await assert.rejects(client.send('health', 'GET', path), TypeError, JSON.stringify(path));
+    }
+    assert.deepEqual(hits, []);
+    assert.equal(await client.health(), true);
+    assert.deepEqual(hits, [{ url: '/proxy/owned/9000/health?sig=fixture', token: 'Bearer application-token' }]);
+    for (const path of attacks) assert.throws(() => new ServerClient(prefix + path + '?sig=fixture'), TypeError);
+    assert.deepEqual(hits.map(hit => hit.url), ['/proxy/owned/9000/health?sig=fixture']);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("raw URL controls and recursively equivalent gateway query keys fail before requests", async () => {
+  for (const url of [
+    'https://gate\tway.invalid/proxy/owned', 'https://gateway.invalid/proxy/owned\n',
+    'https://gateway.invalid/proxy/%2500owned', 'https://gateway.invalid/proxy/%257fowned',
+    'https://gateway.invalid/proxy/owned?sig=one&sig=two',
+    'https://gateway.invalid/proxy/owned?sig=one&%2573ig=two',
+  ]) assert.throws(() => new ServerClient(url), TypeError);
+  const client = new ServerClient('https://gateway.invalid/proxy/owned?sig=fixture');
+  try {
+    await assert.rejects(client.send('health', 'GET', '/health', { params: { '%73ig': 'override' } }), TypeError);
+    await assert.rejects(client.send('health', 'GET', '/health', { params: { path: 'one', '%70ath': 'two' } }), TypeError);
+  } finally { await client.close(); }
+});
+
+test("opaque signed query values containing literal percent bytes stay unchanged", async () => {
+  const hits = [];
+  const server = await listen(async (req, res) => {
+    hits.push(req.url);
+    res.end(JSON.stringify({ status: 'ok' }));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}/proxy/owned/9000?sig=100%25&opaque=%2525`, { token: 'application-token' });
+  try {
+    assert.equal(await client.health(), true);
+    assert.deepEqual(hits, ['/proxy/owned/9000/health?sig=100%25&opaque=%2525']);
+  } finally { await client.close(); await server.close(); }
+});

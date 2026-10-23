@@ -12,6 +12,8 @@ export interface ServerClientOptions {
   token?: string | null;
   /** Extra headers on every request. */
   headers?: Readonly<Record<string, string>>;
+  /** Gateway authentication is separate from the application's bearer token. */
+  gatewayHeaders?: Readonly<Record<string, string>>;
   /** Default per-request timeout in seconds. */
   timeout?: number;
 }
@@ -46,6 +48,44 @@ interface RequestOptions {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function decodedBindingValue(value: string): string {
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (/[\u0000-\u001f\u007f]/.test(value)) throw new TypeError("Control characters are not allowed in sandbox bindings");
+    let decoded: string;
+    try { decoded = decodeURIComponent(value); }
+    catch { throw new TypeError("Invalid sandbox binding encoding"); }
+    if (decoded === value) return value;
+    value = decoded;
+  }
+  throw new TypeError("Sandbox binding is excessively encoded");
+}
+
+function validateBindingPath(path: string, operation: boolean): void {
+  // Validate before WHATWG URL parsing/setters can remove TAB/CR/LF or dots.
+  decodedBindingValue(path);
+  const segments = path.split("/");
+  if ((operation && (!path.startsWith("/") || path.startsWith("//"))) || /[?#\\]/.test(path)) {
+    throw new TypeError("Sandbox operation path must stay within the bound server prefix");
+  }
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = decodedBindingValue(segments[index]);
+    if (segment === "." || segment === ".." || /[\\/]/.test(segment) ||
+      (operation && index > 0 && !segment)) {
+      throw new TypeError("Sandbox operation path must stay within the bound server prefix");
+    }
+  }
+}
+
+function queryBindingKeys(url: URL): Set<string> {
+  const keys = new Set<string>();
+  for (const key of url.searchParams.keys()) {
+    const decoded = decodedBindingValue(key);
+    if (keys.has(decoded)) throw new TypeError("Duplicate sandbox gateway query parameters are not allowed");
+    keys.add(decoded);
+  }
+  return keys;
 }
 
 function errorFromResponse(status: number, body: unknown, endpoint: string): ServerAPIError {
@@ -83,16 +123,42 @@ export class ServerClient {
   readonly files: ServerFilesApi;
   readonly process: ServerProcessApi;
 
+  #endpoint: URL;
   #token: string | undefined;
   #headers: Record<string, string>;
   #closed = false;
   #controllers = new Set<AbortController>();
 
   constructor(baseUrl: string, options: ServerClientOptions = {}) {
-    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    // Query values are opaque signatures: validate raw controls here, and
+    // recursively inspect only the path and query keys below.
+    if (/[\u0000-\u001f\u007f]/.test(baseUrl)) throw new TypeError("Control characters are not allowed in sandbox bindings");
+    const rawPath = /^https?:\/\/[^/?#]+([^?#]*)/i.exec(baseUrl)?.[1];
+    if (rawPath === undefined || /\\/.test(baseUrl)) throw new TypeError("Invalid sandbox server URL");
+    validateBindingPath(rawPath, false);
+    let endpoint: URL;
+    try { endpoint = new URL(baseUrl); } catch { throw new TypeError("Invalid sandbox server URL"); }
+    if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.hash) {
+      throw new TypeError("Sandbox server URL requires HTTP(S), without userinfo or fragment");
+    }
+    queryBindingKeys(endpoint);
+    this.#endpoint = endpoint;
+    // Keep signed query credentials out of object inspection and connection errors.
+    this.baseUrl = endpoint.origin + endpoint.pathname.replace(/\/+$/, "");
     this.timeout = options.timeout ?? 30;
     this.#token = options.token ?? undefined;
-    this.#headers = { ...(options.headers ?? {}) };
+    const headers = new Headers();
+    for (const group of [options.headers ?? {}, options.gatewayHeaders ?? {}]) {
+      for (const [name, value] of Object.entries(group)) {
+        if (["host", ":authority", "forwarded", "x-forwarded-host", "x-forwarded-proto", "x-forwarded-port", "connection", "transfer-encoding", "content-length", "proxy-authorization"].includes(name.toLowerCase())) {
+          throw new TypeError("Authority and transport headers cannot be overridden");
+        }
+        if (headers.has(name)) throw new TypeError("Application and gateway headers must not overlap");
+        headers.set(name, value);
+      }
+    }
+    if (this.#token && headers.has("authorization")) throw new TypeError("Application token conflicts with an existing authentication header");
+    this.#headers = Object.fromEntries(headers);
     this.files = new ServerFilesApi(this);
     this.process = new ServerProcessApi(this);
   }
@@ -134,16 +200,25 @@ export class ServerClient {
     if (this.#closed) {
       throw new ConnectionError(`ServerClient is closed (${this.baseUrl})`);
     }
-    const url = new URL(path.replace(/^\//, ""), `${this.baseUrl}/`);
+    validateBindingPath(path, true);
+    const url = new URL(this.#endpoint);
+    url.pathname = url.pathname.replace(/\/+$/, "") + path;
     if (options.params) {
+      const appended = new URLSearchParams();
+      const keys = queryBindingKeys(url);
       for (const [key, value] of Object.entries(options.params)) {
-        url.searchParams.set(key, String(value));
+        const decoded = decodedBindingValue(key);
+        if (keys.has(decoded)) throw new TypeError("Operation parameters must not replace gateway query parameters");
+        keys.add(decoded);
+        appended.append(key, String(value));
       }
+      const suffix = appended.toString();
+      if (suffix) url.search += (url.search ? "&" : "?") + suffix;
     }
     const headers = this.authHeaders();
     let body: string | undefined;
     if (options.jsonBody !== undefined) {
-      headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
+      headers["content-type"] = headers["content-type"] ?? "application/json";
       body = JSON.stringify(options.jsonBody);
     }
     const timeoutSeconds = options.timeout ?? this.timeout;
@@ -155,7 +230,7 @@ export class ServerClient {
     ]);
     let response: Response;
     try {
-      response = await fetch(url, { method, headers, body, signal });
+      response = await fetch(url, { method, headers, body, signal, redirect: "manual" });
     } catch (err) {
       if (this.#closed || controller.signal.aborted) {
         throw new ConnectionError(`ServerClient is closed (${this.baseUrl})`);
@@ -166,14 +241,17 @@ export class ServerClient {
           `Timed out talking to the sandbox server at ${this.baseUrl}`,
         );
       }
-      const detail = err instanceof Error ? err.message : String(err);
-      throw new ConnectionError(
-        `Could not reach the sandbox server at ${this.baseUrl}: ${detail}`,
-      );
+      throw new ConnectionError(`Could not reach the sandbox server at ${this.baseUrl}`);
     } finally {
       this.#controllers.delete(controller);
     }
 
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new ServerAPIError("Sandbox server redirects are not allowed", {
+        statusCode: response.status, errorType: "BindingError", endpoint,
+      });
+    }
     const text = await response.text();
     let parsed: unknown = null;
     if (text) {
