@@ -205,3 +205,43 @@ test("connection errors and object inspection do not disclose signed URL queries
   await assert.rejects(client.send('health', 'GET', '/health'), error => error instanceof ConnectionError && !String(error).includes('signed-secret'));
   await client.close();
 });
+
+test("control characters and recursively encoded paths cannot escape a real sandbox gateway", async () => {
+  const hits = [];
+  const server = await listen(async (req, res) => {
+    hits.push({ url: req.url, token: req.headers.authorization });
+    res.end(JSON.stringify({ status: 'ok' }));
+  });
+  const prefix = `http://127.0.0.1:${server.port}/proxy/owned/9000`;
+  const client = new ServerClient(prefix + '?sig=fixture', { token: 'application-token' });
+  try {
+    const attacks = [
+      '/\t../\t../victim/9000/health', '/\r../\n../victim/9000/health',
+      '/%09../%09../victim/9000/health', '/%2509../%2509../victim/9000/health',
+      '/%252e%252e/%252e%252e/victim/9000/health', '/a%252fb', '/a%255cb',
+      '/\x00health', '/%00health', '/%2500health', '/\x7fhealth', '/%257fhealth',
+    ];
+    for (const path of attacks) {
+      await assert.rejects(client.send('health', 'GET', path), TypeError, JSON.stringify(path));
+    }
+    assert.deepEqual(hits, []);
+    assert.equal(await client.health(), true);
+    assert.deepEqual(hits, [{ url: '/proxy/owned/9000/health?sig=fixture', token: 'Bearer application-token' }]);
+    for (const path of attacks) assert.throws(() => new ServerClient(prefix + path + '?sig=fixture'), TypeError);
+    assert.deepEqual(hits.map(hit => hit.url), ['/proxy/owned/9000/health?sig=fixture']);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("raw URL controls and recursively equivalent gateway query keys fail before requests", async () => {
+  for (const url of [
+    'https://gate\tway.invalid/proxy/owned', 'https://gateway.invalid/proxy/owned\n',
+    'https://gateway.invalid/proxy/%2500owned', 'https://gateway.invalid/proxy/%257fowned',
+    'https://gateway.invalid/proxy/owned?sig=one&sig=two',
+    'https://gateway.invalid/proxy/owned?sig=one&%2573ig=two',
+  ]) assert.throws(() => new ServerClient(url), TypeError);
+  const client = new ServerClient('https://gateway.invalid/proxy/owned?sig=fixture');
+  try {
+    await assert.rejects(client.send('health', 'GET', '/health', { params: { '%73ig': 'override' } }), TypeError);
+    await assert.rejects(client.send('health', 'GET', '/health', { params: { path: 'one', '%70ath': 'two' } }), TypeError);
+  } finally { await client.close(); }
+});

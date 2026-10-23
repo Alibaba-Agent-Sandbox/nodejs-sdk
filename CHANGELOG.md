@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- Reject control characters before URL normalization and recursively encoded namespace escapes/query-key collisions before an authenticated request can reach another sandbox.
+
 - Preserve sandbox proxy prefixes and signed query bytes; reject redirects, URL userinfo, escaping paths and credential/header collisions. Separate gateway headers from the application token and omit signed query credentials from diagnostics.
 
 - Preserve caller Python source configuration in the local runtime example; document usable source-package installation and validate real runtime behavior on Node20/22 CI. Clarify configuration-name exports and retry compatibility.

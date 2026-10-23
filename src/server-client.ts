@@ -50,6 +50,44 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function decodedBindingValue(value: string): string {
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (/[\u0000-\u001f\u007f]/.test(value)) throw new TypeError("Control characters are not allowed in sandbox bindings");
+    let decoded: string;
+    try { decoded = decodeURIComponent(value); }
+    catch { throw new TypeError("Invalid sandbox binding encoding"); }
+    if (decoded === value) return value;
+    value = decoded;
+  }
+  throw new TypeError("Sandbox binding is excessively encoded");
+}
+
+function validateBindingPath(path: string, operation: boolean): void {
+  // Validate before WHATWG URL parsing/setters can remove TAB/CR/LF or dots.
+  decodedBindingValue(path);
+  const segments = path.split("/");
+  if ((operation && (!path.startsWith("/") || path.startsWith("//"))) || /[?#\\]/.test(path)) {
+    throw new TypeError("Sandbox operation path must stay within the bound server prefix");
+  }
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = decodedBindingValue(segments[index]);
+    if (segment === "." || segment === ".." || /[\\/]/.test(segment) ||
+      (operation && index > 0 && !segment)) {
+      throw new TypeError("Sandbox operation path must stay within the bound server prefix");
+    }
+  }
+}
+
+function queryBindingKeys(url: URL): Set<string> {
+  const keys = new Set<string>();
+  for (const key of url.searchParams.keys()) {
+    const decoded = decodedBindingValue(key);
+    if (keys.has(decoded)) throw new TypeError("Duplicate sandbox gateway query parameters are not allowed");
+    keys.add(decoded);
+  }
+  return keys;
+}
+
 function errorFromResponse(status: number, body: unknown, endpoint: string): ServerAPIError {
   const data = isRecord(body) ? body : {};
   const fromBody = data.error;
@@ -92,11 +130,16 @@ export class ServerClient {
   #controllers = new Set<AbortController>();
 
   constructor(baseUrl: string, options: ServerClientOptions = {}) {
+    decodedBindingValue(baseUrl);
+    const rawPath = /^https?:\/\/[^/?#]+([^?#]*)/i.exec(baseUrl)?.[1];
+    if (rawPath === undefined || /\\/.test(baseUrl)) throw new TypeError("Invalid sandbox server URL");
+    validateBindingPath(rawPath, false);
     let endpoint: URL;
     try { endpoint = new URL(baseUrl); } catch { throw new TypeError("Invalid sandbox server URL"); }
     if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.hash) {
       throw new TypeError("Sandbox server URL requires HTTP(S), without userinfo or fragment");
     }
+    queryBindingKeys(endpoint);
     this.#endpoint = endpoint;
     // Keep signed query credentials out of object inspection and connection errors.
     this.baseUrl = endpoint.origin + endpoint.pathname.replace(/\/+$/, "");
@@ -155,18 +198,16 @@ export class ServerClient {
     if (this.#closed) {
       throw new ConnectionError(`ServerClient is closed (${this.baseUrl})`);
     }
-    let segments: string[];
-    try { segments = path.replace(/^\//, "").split("/").map(decodeURIComponent); }
-    catch { throw new TypeError("Invalid sandbox operation path"); }
-    if (!path.startsWith("/") || path.startsWith("//") || /[?#\\]/.test(path) || segments.some(segment => !segment || segment === "." || segment === ".." || /[\\/]/.test(segment))) {
-      throw new TypeError("Sandbox operation path must stay within the bound server prefix");
-    }
+    validateBindingPath(path, true);
     const url = new URL(this.#endpoint);
     url.pathname = url.pathname.replace(/\/+$/, "") + path;
     if (options.params) {
       const appended = new URLSearchParams();
+      const keys = queryBindingKeys(url);
       for (const [key, value] of Object.entries(options.params)) {
-        if (url.searchParams.has(key)) throw new TypeError("Operation parameters must not replace gateway query parameters");
+        const decoded = decodedBindingValue(key);
+        if (keys.has(decoded)) throw new TypeError("Operation parameters must not replace gateway query parameters");
+        keys.add(decoded);
         appended.append(key, String(value));
       }
       const suffix = appended.toString();

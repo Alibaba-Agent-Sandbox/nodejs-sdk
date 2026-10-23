@@ -128,7 +128,10 @@ For a provider port gateway, pass the exact sandbox/port URL including its proxy
 prefix and query. The client preserves existing query bytes and appends operation
 parameters without replacing gateway parameters. All redirects are rejected,
 including redirects to another sandbox on the same origin. URL userinfo and
-request paths that escape the bound prefix are rejected.
+request paths that escape the bound prefix are rejected. Raw or recursively
+encoded control characters, path separators and dot traversal are validated
+before URL normalization. Duplicate or recursively equivalent gateway query
+keys cannot be introduced by the base URL or an operation.
 
 Use `token` for the application service token and `gatewayHeaders` for the
 provider gateway's headers. `headers` contains other application headers. Header

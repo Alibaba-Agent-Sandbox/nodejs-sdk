@@ -8,6 +8,8 @@ Resolving relative operations against a signed gateway URL discarded its query a
 ## Decision
 Preserve the complete prefix and exact original query bytes, append only new parameters and reject parameter replacement. Refuse every redirect, URL userinfo, fragments, non-HTTP URLs, prefix escapes and authority/transport header overrides. Keep the private endpoint separate from the query-free public baseUrl. Separate gatewayHeaders from the application's token and other headers; reject name collisions instead of silently replacing credentials.
 
+Validation runs on raw base URLs and operation paths before WHATWG URL parsing or pathname assignment. Bounded recursive decoding rejects C0/DEL, encoded separators and traversal at every layer; query keys cannot collide after recursive decoding. This prevents URL normalization from silently moving a credential-bearing request into another sandbox.
+
 ## API Design
 ServerClientOptions adds gatewayHeaders. token remains the application's bearer token. baseUrl reports the query-free origin and path. Failed connections omit underlying error text that may contain signed URLs. The HTTP-only public SDK scope remains unchanged. Per-operation signed paths require the provider's operation resolver; this prefix client does not infer such signatures.
 
