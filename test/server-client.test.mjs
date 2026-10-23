@@ -245,3 +245,16 @@ test("raw URL controls and recursively equivalent gateway query keys fail before
     await assert.rejects(client.send('health', 'GET', '/health', { params: { path: 'one', '%70ath': 'two' } }), TypeError);
   } finally { await client.close(); }
 });
+
+test("opaque signed query values containing literal percent bytes stay unchanged", async () => {
+  const hits = [];
+  const server = await listen(async (req, res) => {
+    hits.push(req.url);
+    res.end(JSON.stringify({ status: 'ok' }));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}/proxy/owned/9000?sig=100%25&opaque=%2525`, { token: 'application-token' });
+  try {
+    assert.equal(await client.health(), true);
+    assert.deepEqual(hits, ['/proxy/owned/9000/health?sig=100%25&opaque=%2525']);
+  } finally { await client.close(); await server.close(); }
+});

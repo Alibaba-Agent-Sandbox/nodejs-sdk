@@ -130,7 +130,9 @@ export class ServerClient {
   #controllers = new Set<AbortController>();
 
   constructor(baseUrl: string, options: ServerClientOptions = {}) {
-    decodedBindingValue(baseUrl);
+    // Query values are opaque signatures: validate raw controls here, and
+    // recursively inspect only the path and query keys below.
+    if (/[\u0000-\u001f\u007f]/.test(baseUrl)) throw new TypeError("Control characters are not allowed in sandbox bindings");
     const rawPath = /^https?:\/\/[^/?#]+([^?#]*)/i.exec(baseUrl)?.[1];
     if (rawPath === undefined || /\\/.test(baseUrl)) throw new TypeError("Invalid sandbox server URL");
     validateBindingPath(rawPath, false);
