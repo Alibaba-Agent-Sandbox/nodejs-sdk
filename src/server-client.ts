@@ -105,7 +105,7 @@ export class ServerClient {
     const headers = new Headers();
     for (const group of [options.headers ?? {}, options.gatewayHeaders ?? {}]) {
       for (const [name, value] of Object.entries(group)) {
-        if (["host", ":authority", "connection", "transfer-encoding", "content-length", "proxy-authorization"].includes(name.toLowerCase())) {
+        if (["host", ":authority", "forwarded", "x-forwarded-host", "x-forwarded-proto", "x-forwarded-port", "connection", "transfer-encoding", "content-length", "proxy-authorization"].includes(name.toLowerCase())) {
           throw new TypeError("Authority and transport headers cannot be overridden");
         }
         if (headers.has(name)) throw new TypeError("Application and gateway headers must not overlap");
@@ -175,7 +175,7 @@ export class ServerClient {
     const headers = this.authHeaders();
     let body: string | undefined;
     if (options.jsonBody !== undefined) {
-      headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
+      headers["content-type"] = headers["content-type"] ?? "application/json";
       body = JSON.stringify(options.jsonBody);
     }
     const timeoutSeconds = options.timeout ?? this.timeout;

@@ -172,7 +172,7 @@ test("userinfo, authority overrides and overlapping credentials are rejected bef
   for (const url of ['http://user:secret@localhost:9000', 'file:///tmp/server', 'http://localhost:9000/#fragment']) {
     assert.throws(() => new ServerClient(url), TypeError);
   }
-  for (const name of ['Host', ':authority', 'Proxy-Authorization', 'Content-Length']) {
+  for (const name of ['Host', ':authority', 'Forwarded', 'X-Forwarded-Host', 'X-Forwarded-Proto', 'X-Forwarded-Port', 'Proxy-Authorization', 'Content-Length']) {
     assert.throws(() => new ServerClient('http://localhost:9000', { headers: { [name]: 'bad' } }), TypeError);
   }
   assert.throws(() => new ServerClient('http://localhost:9000', { token: 'app', gatewayHeaders: { authorization: 'gateway' } }), TypeError);
