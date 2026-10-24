@@ -1,6 +1,6 @@
 # Decision: Bind HTTP requests to one application endpoint
 
-Status: proposed
+Status: implemented
 
 ## Problem
 Resolving relative operations against a signed gateway URL discarded its query and could misplace the proxy prefix. Default fetch redirects could send application credentials to a different sandbox. Diagnostics and object inspection exposed URL query credentials.
@@ -24,3 +24,7 @@ Use real loopback HTTP servers to check wire paths/query bytes, credential separ
 
 ## Acceptance criteria
 All configured Node tests and type checks pass. Proxy paths and signature bytes survive each operation. Redirects and authority overrides cannot move credentials. No cloud or interpreter API is introduced; verification distinguishes local runtime behavior from cloud acceptance.
+
+## Implementation
+
+Delivered in [PR #10](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/pull/10); actual merged state was checked on 2026-10-24. Later acceptance and current limitations are indexed in the [current synchronization record](../../../evidence/verify/2026-10-24-current-docs-and-records.md). Earlier verification files remain unchanged and retain their original pending or failed observations.

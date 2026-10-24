@@ -1,5 +1,5 @@
 # Decision: Provide a usable Node source package and portable runtime example
-Status: proposed
+Status: implemented
 
 ## Problem
 
@@ -48,3 +48,7 @@ Hosted Node20/22 must pass; a local runtime test is not cloud provider proof.
 - Explicit Python source configuration remains intact; actual example passes.
 - Both CI versions run against the pinned real runtime without cloud secrets.
 - Bilingual docs and accurate owner evidence accompany the change.
+
+## Implementation
+
+Delivered in [PR #5](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/pull/5); actual merged state was checked on 2026-10-24. Later acceptance and current limitations are indexed in the [current synchronization record](../../../evidence/verify/2026-10-24-current-docs-and-records.md). Earlier verification files remain unchanged and retain their original pending or failed observations.

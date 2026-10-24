@@ -1,6 +1,6 @@
 # Decision: Synchronize the public configuration contract
 
-Status: proposed
+Status: implemented
 
 ## Problem
 
@@ -57,3 +57,7 @@ review before any authorized merge; no cloud or release is involved.
 ## Evidence
 
 - [Verification](../../../evidence/verify/2026-10-18-config-provider-reservations.md)
+
+## Implementation
+
+Delivered in [PR #3](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/pull/3); actual merged state was checked on 2026-10-24. Later acceptance and current limitations are indexed in the [current synchronization record](../../../evidence/verify/2026-10-24-current-docs-and-records.md). Earlier verification files remain unchanged and retain their original pending or failed observations.

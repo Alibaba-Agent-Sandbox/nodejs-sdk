@@ -1,5 +1,18 @@
 # Node SDK engineering records
 
+## Current delivery — 2026-10-24
+
+- Source package version: **0.1.0**. [Source installation](../README.md#install) builds and packs the SDK. The recorded delivery is source merge, not npm publication.
+- Scope: application HTTP `ServerClient` and configuration-name exports. No cloud lifecycle, template build, provider engine, PTY or interpreter client is exported.
+- [Bound HTTP endpoint acceptance](evidence/verify/2026-10-23-bound-http-control-review.md) and [proxy-token acceptance](evidence/verify/2026-10-24-proxy-application-token.md) cover copied headers, preserved gateway URL/query, redirect refusal and no automatic credential retry.
+- The proxy record includes the actual OpenSandbox python-hello Node calls. The 92-case template matrix used CLI/Python/HTTP and does **not** establish a 92-case Node SDK test.
+- The [local runtime example](../examples/README.md) now installs the public Python server 0.3.1a5; its local health/process/file checks do not establish cloud lifecycle support.
+
+[Documentation synchronization decision](notes/implemented/process/2026-10-24-current-docs-and-records.md) · [verification and acceptance reconciliation](evidence/verify/2026-10-24-current-docs-and-records.md).
+
+Earlier entries below are a decision history. A remaining proposal is not a current product guarantee; read the linked acceptance scope before treating its full criteria as complete.
+
+
 This repository owns decisions and verification for its HTTP client, public
 configuration schema, ESM/TypeScript exports and examples. New records use English;
 source contracts in other repositories are linked through absolute GitHub URLs.
@@ -19,16 +32,16 @@ Include scoped records in the owning PR. Run applicable tests/build, inspect exa
 latest-head required CI and independent review, and verify actual remote merge
 state. A local/runtime result is not cloud acceptance or package publication.
 
-- [Configuration reservations and installation](notes/proposed/process/2026-10-18-config-provider-reservations.md)
+- [Configuration reservations and installation](notes/implemented/process/2026-10-18-config-provider-reservations.md)
 - [Verification](evidence/verify/2026-10-18-config-provider-reservations.md)
 
-- [Portable source installation](notes/proposed/process/2026-10-18-portable-source-installation.md) · [verification](evidence/verify/2026-10-18-portable-source-installation.md)
+- [Portable source installation](notes/implemented/process/2026-10-18-portable-source-installation.md) · [verification](evidence/verify/2026-10-18-portable-source-installation.md)
 
 - [Current configuration contract](notes/implemented/architecture/2026-10-22-remove-legacy-compatibility.md) · [verification](evidence/verify/2026-10-22-remove-legacy-compatibility.md)
 
 - [Compatibility cleanup remote acceptance](evidence/verify/2026-10-22-remove-legacy-acceptance.md)
 
-- [Bound HTTP client](notes/proposed/architecture/2026-10-23-bound-http-client.md) · [verification](evidence/verify/2026-10-23-bound-http-client.md)
+- [Bound HTTP client](notes/implemented/architecture/2026-10-23-bound-http-client.md) · [verification](evidence/verify/2026-10-23-bound-http-client.md)
 
 - [HTTP binding control-character review](evidence/verify/2026-10-23-bound-http-control-review.md)
 
