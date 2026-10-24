@@ -258,3 +258,43 @@ test("opaque signed query values containing literal percent bytes stay unchanged
     assert.deepEqual(hits, ['/proxy/owned/9000/health?sig=100%25&opaque=%2525']);
   } finally { await client.close(); await server.close(); }
 });
+
+
+for (const header of ["X-Access-Token", "x-access-token", "X-aCcEsS-ToKeN"]) {
+  test(`preserves gateway ${header} and leaves caller headers unchanged`, async () => {
+    const gatewayHeaders = {[header]: "gateway-only"};
+    const client = new ServerClient("http://localhost:9000", {token: "application-only", gatewayHeaders});
+    const first = client.authHeaders();
+    assert.deepEqual(first, {"x-access-token": "gateway-only", Authorization: "Bearer application-only"});
+    first["x-access-token"] = "changed-copy";
+    assert.equal(client.authHeaders()["x-access-token"], "gateway-only");
+    assert.deepEqual(gatewayHeaders, {[header]: "gateway-only"});
+    await client.close();
+  });
+}
+
+test("does not create application authentication without a token", async () => {
+  const client = new ServerClient("http://localhost:9000", {gatewayHeaders: {"X-Gateway-Token": "gateway-only"}});
+  assert.deepEqual(client.authHeaders(), {"x-gateway-token": "gateway-only"});
+  await client.close();
+});
+
+for (const mode of ["bearer-only", "authorization-stripped"]) {
+  test(`authenticates a real HTTP ${mode} service`, async () => {
+    const server = await listen(async (req, res) => {
+      await readBody(req);
+      const accepted = mode === "authorization-stripped"
+        ? req.headers["x-access-token"] === "application-only"
+        : req.headers.authorization === "Bearer application-only";
+      res.writeHead(accepted ? 200 : 401, {"Content-Type": "application/json"});
+      res.end(JSON.stringify(accepted ? {stdout: "42\n", stderr: "", exit_code: 0} : {error: "unauthorized"}));
+    });
+    const headers = {"X-Custom-App": "kept"};
+    const client = new ServerClient(`http://127.0.0.1:${server.port}/proxy/owned/9000`, {token: "application-only", headers});
+    try {
+      const result = await client.process.shell("echo 42");
+      assert.equal(result.stdout, "42\n");
+      assert.deepEqual(headers, {"X-Custom-App": "kept"});
+    } finally {await client.close(); await server.close();}
+  });
+}

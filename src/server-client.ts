@@ -8,7 +8,7 @@ export const DEFAULT_SERVER_PORT = 9000;
 const SYNC_TIMEOUT_SLACK = 10;
 
 export interface ServerClientOptions {
-  /** Sent as `Authorization: Bearer` when set. */
+  /** Sent as Bearer and, unless occupied, the existing X-Access-Token header. */
   token?: string | null;
   /** Extra headers on every request. */
   headers?: Readonly<Record<string, string>>;
@@ -166,7 +166,13 @@ export class ServerClient {
   /** Headers sent on every request. */
   authHeaders(): Record<string, string> {
     const headers = { ...this.#headers };
-    if (this.#token) headers.Authorization = `Bearer ${this.#token}`;
+    if (this.#token) {
+      headers.Authorization = `Bearer ${this.#token}`;
+      // Preserve caller/gateway credentials while supporting proxies that strip Bearer.
+      if (!Object.keys(headers).some(name => name.toLowerCase() === "x-access-token")) {
+        headers["X-Access-Token"] = this.#token;
+      }
+    }
     return headers;
   }
 
