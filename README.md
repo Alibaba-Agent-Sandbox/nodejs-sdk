@@ -13,7 +13,7 @@ It is **not** a port of `Sandbox.create`, cloud providers, or the server SDK. Cr
 
 ## Install
 
-On2026-10-18 the public npm metadata endpoint for `@agent-sandbox/sdk` returned404.
+On 2026-10-18 the public npm metadata endpoint for `@agent-sandbox/sdk` returned 404.
 Build the source package until the matching release is available on your registry:
 
 ```bash
@@ -24,7 +24,7 @@ npm run build
 npm pack
 ```
 
-This checkout's version0.1.0 produces `agent-sandbox-sdk-0.1.0.tgz` with built
+This checkout's version 0.1.0 produces `agent-sandbox-sdk-0.1.0.tgz` with built
 `dist/` exports. In your application, install that generated archive:
 
 ```bash
@@ -63,6 +63,28 @@ await server.close();
 ```
 
 `examples/agent-loop.mjs` starts that local server and runs the same four steps as the Python scenario `examples/scenarios/agent_loop_local.py`: health, `python3 -c 'print(2 + 2)'`, write and read `result.txt`, then `SIGTERM`. The recorded run is in [examples/README.md](examples/README.md).
+
+## Gateway and application authentication
+
+For a provider port gateway, pass the exact sandbox/port URL including its proxy
+prefix and query. The client preserves existing query bytes and appends operation
+parameters without replacing gateway parameters. All redirects are rejected,
+including redirects to another sandbox on the same origin. URL userinfo and
+request paths that escape the bound prefix are rejected. Raw or recursively
+encoded control characters, path separators and dot traversal are validated
+before URL normalization. Duplicate or recursively equivalent gateway query
+keys cannot be introduced by the base URL or an operation.
+
+Use `token` for the application service token and `gatewayHeaders` for the
+provider gateway's headers. `headers` contains other application headers. Header
+names must not overlap between groups; an existing `Authorization` header cannot
+be combined with `token`. Authority and transport headers cannot be overridden.
+The public `baseUrl` and connection errors omit query credentials. Never pass a
+provider control-plane API key as the application token. This client accepts
+prefix-bound HTTP URLs; operation-specific signed path bindings must use the provider
+adapter's operation transport. This prefix client does not accept those bindings.
+
+The explicit application `token` is also sent as `X-Access-Token` when no supplied header already occupies that name, case-insensitively. Bearer is retained for existing services. Caller and gateway headers are copied for each request and never overwritten; requests without a token gain no application credentials. This supports server proxies that strip Authorization using the server's existing authentication header.
 
 ## Configuration names
 
@@ -121,25 +143,3 @@ readEnv("sandbox_api_key", process.env);
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
-
-Configuration storage uses one `storage` descriptor. / 配置存储统一使用 `storage` 字段。
-
-For a provider port gateway, pass the exact sandbox/port URL including its proxy
-prefix and query. The client preserves existing query bytes and appends operation
-parameters without replacing gateway parameters. All redirects are rejected,
-including redirects to another sandbox on the same origin. URL userinfo and
-request paths that escape the bound prefix are rejected. Raw or recursively
-encoded control characters, path separators and dot traversal are validated
-before URL normalization. Duplicate or recursively equivalent gateway query
-keys cannot be introduced by the base URL or an operation.
-
-Use `token` for the application service token and `gatewayHeaders` for the
-provider gateway's headers. `headers` contains other application headers. Header
-names must not overlap between groups; an existing `Authorization` header cannot
-be combined with `token`. Authority and transport headers cannot be overridden.
-The public `baseUrl` and connection errors omit query credentials. Never pass a
-provider control-plane API key as the application token. This client accepts
-prefix-bound HTTP URLs; operation-specific signed path bindings must use the provider
-adapter's operation transport. This prefix client does not accept those bindings.
-
-The explicit application `token` is also sent as `X-Access-Token` when no supplied header already occupies that name, case-insensitively. Bearer is retained for existing services. Caller and gateway headers are copied for each request and never overwritten; requests without a token gain no application credentials. This supports server proxies that strip Authorization using the server's existing authentication header.

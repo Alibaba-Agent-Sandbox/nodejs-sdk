@@ -63,6 +63,22 @@ await server.close();
 
 `examples/agent-loop.mjs` 会启动这个本地服务，并执行与 Python 场景 `examples/scenarios/agent_loop_local.py` 相同的四步：健康检查、`python3 -c 'print(2 + 2)'`、写入并读回 `result.txt`、然后 `SIGTERM`。记录见 [examples/README.md](examples/README.md)。
 
+## 网关与应用认证
+
+通过提供方端口网关访问时，应传入包含完整代理前缀、沙箱和端口标识及查询参数
+的 URL。客户端保留原查询参数的字节，仅追加操作参数，禁止覆盖网关参数。
+所有重定向均会拒绝，包括同一域名下跳转到另一沙箱；URL 用户信息及越出绑定
+前缀的操作路径也会拒绝。URL 归一化之前即检查原始或多层编码的控制字符、
+路径分隔符与点路径；基址和操作都不能引入重复或多层编码后等价的网关查询键。
+
+`token` 用于应用服务令牌，`gatewayHeaders` 用于平台网关请求头，`headers`
+用于其他应用请求头。各组请求头名称不能重叠；已有 `Authorization` 请求头时
+不能再传入 `token`。不能覆盖 Host 等寻址及传输请求头。公开 `baseUrl` 和连接
+错误省略查询凭据。不要把平台控制面 API Key 作为应用令牌传入。本客户端使用
+绑定代理前缀的 HTTP URL；按操作签名的路径绑定需要使用提供方适配器的逐操作传输接口，不能传入本前缀客户端。
+
+显式应用 `token` 还会通过 `X-Access-Token` 发送，前提是调用方提供的请求头未占用该名称（不区分大小写）。Bearer 仍然保留以兼容现有服务。每次请求复制调用方与网关请求头，不会覆盖它们；未提供 token 时不会添加应用凭据。该行为使用服务端已有认证请求头，兼容剥离 Authorization 的服务端代理。
+
 ## 配置名
 
 此表导出配置名称；`readEnv` 只读取值，不会把这些字段自动应用到 `ServerClient`。已移除不生效的旧重试配置名称。
@@ -120,19 +136,3 @@ readEnv("sandbox_api_key", process.env);
 ## 许可
 
 Apache-2.0。见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
-
-Configuration storage uses one `storage` descriptor. / 配置存储统一使用 `storage` 字段。
-
-通过提供方端口网关访问时，应传入包含完整代理前缀、沙箱和端口标识及查询参数
-的 URL。客户端保留原查询参数的字节，仅追加操作参数，禁止覆盖网关参数。
-所有重定向均会拒绝，包括同一域名下跳转到另一沙箱；URL 用户信息及越出绑定
-前缀的操作路径也会拒绝。URL 归一化之前即检查原始或多层编码的控制字符、
-路径分隔符与点路径；基址和操作都不能引入重复或多层编码后等价的网关查询键。
-
-`token` 用于应用服务令牌，`gatewayHeaders` 用于平台网关请求头，`headers`
-用于其他应用请求头。各组请求头名称不能重叠；已有 `Authorization` 请求头时
-不能再传入 `token`。不能覆盖 Host 等寻址及传输请求头。公开 `baseUrl` 和连接
-错误省略查询凭据。不要把平台控制面 API Key 作为应用令牌传入。本客户端使用
-绑定代理前缀的 HTTP URL；按操作签名的路径绑定需要使用提供方适配器的逐操作传输接口，不能传入本前缀客户端。
-
-显式应用 `token` 还会通过 `X-Access-Token` 发送，前提是调用方提供的请求头未占用该名称（不区分大小写）。Bearer 仍然保留以兼容现有服务。每次请求复制调用方与网关请求头，不会覆盖它们；未提供 token 时不会添加应用凭据。该行为使用服务端已有认证请求头，兼容剥离 Authorization 的服务端代理。
