@@ -31,3 +31,5 @@ state. A local/runtime result is not cloud acceptance or package publication.
 - [Bound HTTP client](notes/proposed/architecture/2026-10-23-bound-http-client.md) · [verification](evidence/verify/2026-10-23-bound-http-client.md)
 
 - [HTTP binding control-character review](evidence/verify/2026-10-23-bound-http-control-review.md)
+
+- [Proxy application token compatibility](notes/implemented/feature/2026-10-24-proxy-application-token.md) · [verification](evidence/verify/2026-10-24-proxy-application-token.md).

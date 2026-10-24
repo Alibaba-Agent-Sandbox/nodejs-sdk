@@ -141,3 +141,5 @@ The public `baseUrl` and connection errors omit query credentials. Never pass a
 provider control-plane API key as the application token. This client accepts
 prefix-bound HTTP URLs; operation-specific signed path bindings must use the provider
 adapter's operation transport. This prefix client does not accept those bindings.
+
+The explicit application `token` is also sent as `X-Access-Token` when no supplied header already occupies that name, case-insensitively. Bearer is retained for existing services. Caller and gateway headers are copied for each request and never overwritten; requests without a token gain no application credentials. This supports server proxies that strip Authorization using the server's existing authentication header.

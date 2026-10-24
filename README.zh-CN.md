@@ -134,3 +134,5 @@ Configuration storage uses one `storage` descriptor. / 配置存储统一使用 
 不能再传入 `token`。不能覆盖 Host 等寻址及传输请求头。公开 `baseUrl` 和连接
 错误省略查询凭据。不要把平台控制面 API Key 作为应用令牌传入。本客户端使用
 绑定代理前缀的 HTTP URL；按操作签名的路径绑定需要使用提供方适配器的逐操作传输接口，不能传入本前缀客户端。
+
+显式应用 `token` 还会通过 `X-Access-Token` 发送，前提是调用方提供的请求头未占用该名称（不区分大小写）。Bearer 仍然保留以兼容现有服务。每次请求复制调用方与网关请求头，不会覆盖它们；未提供 token 时不会添加应用凭据。该行为使用服务端已有认证请求头，兼容剥离 Authorization 的服务端代理。
