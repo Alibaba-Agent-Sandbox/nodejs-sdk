@@ -1,6 +1,6 @@
 # Decision: Preserve application tokens through server proxies
 
-Status: proposed
+Status: implemented
 
 ## Problem
 
