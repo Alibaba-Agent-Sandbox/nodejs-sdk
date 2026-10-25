@@ -39,7 +39,7 @@ The current example uses an installed Python runtime and preserves caller
 `PYTHONPATH`; it adds no fixed repository paths. Install the server before running:
 
 ```bash
-python3 -m pip install 'agent-sandbox-server==0.3.1a5'
+python3 -m pip install 'agent-sandbox-server==0.4.0a1'
 npm ci
 npm test
 node examples/agent-loop.mjs
@@ -49,3 +49,9 @@ node examples/agent-loop.mjs
 先按上面的公开 alpha 版本安装运行时。开发中的服务端也可通过调用方 `PYTHONPATH` 提供；
 上方历史输出的环境路径仅记录原来的运行环境。该示例验证本地 HTTP、命令、文件与进程清理，
 不代表云端 `Sandbox.create`。
+
+## Fresh published-runtime verification — 2026-10-25
+
+A fresh Python 3.13 environment with public `agent-sandbox-server==0.4.0a1`, followed by the documented `npm ci`, `npm run build` and `node examples/agent-loop.mjs`, passed. The shell returned `4\n`, the downloaded file matched `answer=4\n`, and the owned server process exited after SIGTERM. `npm run typecheck` and all 24 Node tests passed. No cloud resource or model API was used.
+
+2026-10-25 已从全新环境安装公开 Python 服务端 0.4.0a1，再按上述命令构建和运行示例。命令输出、文件内容和服务进程清理均通过；类型检查及 24 个测试通过。本次是实际本地 HTTP 运行，不代表云端或模型调用测试。

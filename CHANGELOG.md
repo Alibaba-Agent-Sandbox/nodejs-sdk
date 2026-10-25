@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Documentation
+
+- Verify the documented local agent-loop example with public Python runtime 0.4.0a1 and refresh its installation pin.
+
 ### Removed
 
 - Retired retry configuration exports and duplicate migration-phase storage descriptors; use the current Python-owned configuration schema.
