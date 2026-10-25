@@ -1,6 +1,6 @@
 # Decision: Select the verified public a3 server for the local example
 
-Status: proposed
+Status: implemented
 
 ## Problem
 
@@ -40,3 +40,5 @@ Required latest-head CI and independent review precede verified normal merge.
 No cloud or npm publication claim is made.
 
 [Verification](../../../evidence/verify/2026-10-25-current-public-server-a3.md).
+
+Accepted by https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/pull/18 at 2308aec369c60e451be0cc9f9c34e245a93a3104. Previous verification receipts retain their a3 scope.

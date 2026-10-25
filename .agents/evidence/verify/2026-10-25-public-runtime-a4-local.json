@@ -1,0 +1,32 @@
+{
+  "base": "2308aec369c60e451be0cc9f9c34e245a93a3104",
+  "python_package_versions": {
+    "agent-sandbox-client": "0.4.0a4",
+    "agent-sandbox-server": "0.4.0a4"
+  },
+  "fresh_official_no_cache_install": true,
+  "no_pythonpath_source_injection": true,
+  "node_tests": {
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0
+  },
+  "typecheck": "PASS",
+  "complete_config_schema": "equal",
+  "actual_example": {
+    "exit": 0,
+    "health": true,
+    "command_exit": 0,
+    "stdout": "4\n",
+    "file": "answer=4\n",
+    "server_exit": -15,
+    "observed_owned_processes": 1,
+    "independently_absent": 1
+  },
+  "pack_dry_run": "PASS",
+  "source_runtime_change": false,
+  "cloud_calls": 0,
+  "model_calls": 0,
+  "npm_publication": false,
+  "result": "PASS for local current documentation/runtime verification"
+}
