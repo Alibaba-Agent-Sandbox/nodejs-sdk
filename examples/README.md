@@ -40,7 +40,7 @@ The current example uses an installed Python runtime and preserves caller
 `PYTHONPATH`; it adds no fixed repository paths. Install the server before running:
 
 ```bash
-python3 -m pip install 'agent-sandbox-server==0.4.0a2'
+python3 -m pip install --index-url https://pypi.org/simple 'agent-sandbox-server==0.4.0a2'
 npm ci
 npm test
 node examples/agent-loop.mjs
