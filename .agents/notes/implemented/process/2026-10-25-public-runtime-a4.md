@@ -1,6 +1,6 @@
 # Decision: Use the corrected public Python a4 help contract
 
-Status: proposed
+Status: implemented
 
 ## Problem
 

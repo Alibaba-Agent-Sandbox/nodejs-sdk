@@ -40,19 +40,29 @@ The current example uses an installed Python runtime and preserves caller
 `PYTHONPATH`; it adds no fixed repository paths. Install the server before running:
 
 ```bash
-python3 -m pip install --index-url https://pypi.org/simple 'agent-sandbox-server==0.4.0a4'
+python3 -m pip install --index-url https://pypi.org/simple 'agent-sandbox-server==0.4.0a6'
 npm ci
 npm test
 node examples/agent-loop.mjs
 ```
 
 当前示例使用已安装的 Python 服务端，并原样保留调用方 `PYTHONPATH`，不再添加固定仓库路径。
-先按上面的公开 alpha 版本安装运行时。开发中的服务端也可通过调用方 `PYTHONPATH` 提供；
+上面的 a6 版本已从官方 PyPI 安装验证。开发中的服务端也可通过调用方 `PYTHONPATH` 提供；
 该示例验证本地 HTTP、命令、文件与进程清理，
 不代表云端 `Sandbox.create`。
 
-## Fresh published-runtime verification — 2026-10-25
+## Published-runtime verification — 2026-10-25
 
-A fresh Python 3.13 environment (no repository source injection) with public `agent-sandbox-server==0.4.0a4`, followed by the documented `npm ci`, `npm run build` and `node examples/agent-loop.mjs`, passed. The shell returned `4\n`, the downloaded file matched `answer=4\n`, and the owned server process exited after SIGTERM. `npm run typecheck` and all 24 Node tests passed. No cloud resource or model API was used.
+A new Python 3.13 environment installed official public client/server a6 without
+source injection. The documented Node checks passed: typecheck, all 24 tests,
+the unchanged local example, and package dry-run. The real server returned
+`4\n`, the file read back as `answer=4\n`, and SIGTERM ended the process.
+All three observed owned Python processes were independently confirmed absent.
+The complete exported configuration schema matched the installed public SDK.
+No cloud lifecycle, model call or npm publication is established by this local run.
+The earlier a4 receipt remains unchanged.
 
-2026-10-25 已从全新环境安装公开 Python 服务端 0.4.0a4，再按上述命令构建和运行示例。命令输出、文件内容和服务进程清理均通过；类型检查及 24 个测试通过。本次是实际本地 HTTP 运行，不代表云端或模型调用测试。
+全新 Python 3.13 环境已从官方 PyPI 安装 a6 配套包，不注入源码。类型检查、24 个测试、
+原样本地示例和打包预检均通过；实际命令、文件读回与 SIGTERM 清理均通过，三个本次
+观察到的 Python 进程另行确认已退出，完整配置名称契约也与公开 SDK 一致。本次是本地
+HTTP 验证，不代表云端生命周期、模型调用或 npm 发布；旧 a4 记录保持不变。
