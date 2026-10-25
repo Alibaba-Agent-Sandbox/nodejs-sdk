@@ -1,12 +1,12 @@
 # Node SDK engineering records
 
-## Current delivery — 2026-10-24
+## Current delivery — 2026-10-25
 
 - Source package version: **0.1.0**. [Source installation](../README.md#install) builds and packs the SDK. The recorded delivery is source merge, not npm publication.
 - Scope: application HTTP `ServerClient` and configuration-name exports. No cloud lifecycle, template build, provider engine, PTY or interpreter client is exported.
 - [Bound HTTP endpoint acceptance](evidence/verify/2026-10-23-bound-http-control-review.md) and [proxy-token acceptance](evidence/verify/2026-10-24-proxy-application-token.md) cover copied headers, preserved gateway URL/query, redirect refusal and no automatic credential retry.
 - The proxy record includes the actual OpenSandbox python-hello Node calls. The 92-case template matrix used CLI/Python/HTTP and does **not** establish a 92-case Node SDK test.
-- The [local runtime example](../examples/README.md) now installs the public Python server 0.4.0a2; its local health/process/file checks do not establish cloud lifecycle support.
+- The [local runtime example](../examples/README.md) now installs the public Python server 0.4.0a3; its local health/process/file checks do not establish cloud lifecycle support.
 
 [Documentation synchronization decision](notes/implemented/process/2026-10-24-current-docs-and-records.md) · [verification and acceptance reconciliation](evidence/verify/2026-10-24-current-docs-and-records.md).
 
@@ -52,3 +52,5 @@ state. A local/runtime result is not cloud acceptance or package publication.
 - [Public runtime a2 guidance](notes/proposed/process/2026-10-25-public-runtime-a2.md) · [verification](evidence/verify/2026-10-25-public-runtime-a2.md).
 
 - [Example official PyPI index](notes/proposed/process/2026-10-25-example-official-index.md) · [verification](evidence/verify/2026-10-25-example-official-index.md).
+
+- [Current public server a3](notes/proposed/process/2026-10-25-current-public-server-a3.md) · [verification](evidence/verify/2026-10-25-current-public-server-a3.md).

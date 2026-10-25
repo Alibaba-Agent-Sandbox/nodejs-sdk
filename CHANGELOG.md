@@ -4,6 +4,8 @@
 
 ### Documentation
 
+- Select verified public Python server 0.4.0a3 in the local example and CI, with its matching configuration-schema release tag.
+
 - Use the official PyPI index for the local example's exact public server 0.4.0a2 installation, matching CI.
 
 - Verify the documented local agent-loop example with public Python runtime 0.4.0a1 and refresh its installation pin.
