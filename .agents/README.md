@@ -50,3 +50,5 @@ state. A local/runtime result is not cloud acceptance or package publication.
 - [Fresh documented example rerun](notes/proposed/process/2026-10-25-example-rerun.md) · [verification](evidence/verify/2026-10-25-example-rerun.md).
 
 - [Public runtime a2 guidance](notes/proposed/process/2026-10-25-public-runtime-a2.md) · [verification](evidence/verify/2026-10-25-public-runtime-a2.md).
+
+- [Example official PyPI index](notes/proposed/process/2026-10-25-example-official-index.md) · [verification](evidence/verify/2026-10-25-example-official-index.md).

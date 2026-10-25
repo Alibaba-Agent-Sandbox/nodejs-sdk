@@ -4,6 +4,8 @@
 
 ### Documentation
 
+- Use the official PyPI index for the local example's exact public server 0.4.0a2 installation, matching CI.
+
 - Verify the documented local agent-loop example with public Python runtime 0.4.0a1 and refresh its installation pin.
 
 ### Removed
