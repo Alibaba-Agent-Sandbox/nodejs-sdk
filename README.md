@@ -143,3 +143,6 @@ readEnv("sandbox_api_key", process.env);
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+
+The application authentication regression cases are shared with the Python client and CLI from the Python SDK contract source. This library takes credentials through constructor options; it has no interactive setup command.

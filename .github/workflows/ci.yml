@@ -22,9 +22,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Alibaba-Agent-Sandbox/python-sdk
-          ref: v0.4.0a6
+          ref: 98642ae6712a5017e187cae7952a2b3c819c1ece
           path: vendor/python-sdk
           persist-credentials: false
+      - name: Verify shared application authentication vectors
+        run: cmp test/fixtures/application-auth-vectors.json vendor/python-sdk/contracts/testing/application-auth-vectors.json
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

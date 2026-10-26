@@ -298,3 +298,13 @@ for (const mode of ["bearer-only", "authorization-stripped"]) {
     } finally {await client.close(); await server.close();}
   });
 }
+
+// Canonical source: python-sdk/contracts/testing/application-auth-vectors.json.
+const authVectors = JSON.parse((await import('node:fs')).readFileSync(new URL('./fixtures/application-auth-vectors.json', import.meta.url), 'utf8'));
+for (const vector of authVectors.cases) {
+  test(`shared application authentication: ${vector.id}`, async () => {
+    const client = new ServerClient('https://example.invalid/owned', {token: vector.token, gatewayHeaders: vector.headers});
+    assert.deepEqual(Object.fromEntries(Object.entries(client.authHeaders()).map(([key, value]) => [key.toLowerCase(), value])), vector.expected);
+    await client.close();
+  });
+}
