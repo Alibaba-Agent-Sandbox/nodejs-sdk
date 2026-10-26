@@ -136,3 +136,6 @@ readEnv("sandbox_api_key", process.env);
 ## 许可
 
 Apache-2.0。见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
+
+
+应用认证回归数据与 Python 客户端、CLI 共用同一份 Python SDK 契约来源。本库通过构造参数接收凭证，没有交互式配置命令。

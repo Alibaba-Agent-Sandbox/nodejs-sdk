@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Tests
+
+- Consume common application authentication vectors without adding SDK setup commands or changing public exports.
+
+
 ### Documentation
 
 - Select the verified public Python a4 runtime and matching configuration-source tag; preserve prior a3 verification as history. / 本地示例与配置对照统一公开 Python a4，保留原 a3 验证记录。
