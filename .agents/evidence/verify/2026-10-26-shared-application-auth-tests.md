@@ -1,7 +1,7 @@
 # Verification: shared application authentication tests
 
 - Date: 2026-10-26
-- Result: PARTIAL
+- Result: PASS for the unchanged runtime and shared test contract
 - Change: test fixture and ServerClient authHeaders regressions; runtime source unchanged.
 - Environment: Node 22.22.2, Python 3.13; source client/server 0.4.0a6 in an isolated virtual environment.
 
@@ -18,4 +18,4 @@ Local server processes were stopped by their existing tests. No cloud resources 
 
 ## Not verified
 
-The canonical fixture is byte-identical to Python owner commit 98642ae6712a5017e187cae7952a2b3c819c1ece; CI checks that pinned copy. Required remote CI/review and owner merge remain pending. This is not an npm publication or whole-template cloud claim.
+The canonical fixture is byte-identical to Python owner commit 98642ae6712a5017e187cae7952a2b3c819c1ece; CI checks that pinned copy. PR https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/pull/21 passed both required Node 20 and Node 22 jobs at f25a18ed41a30091f7029b864e621938f8b441db. Owner dependency https://github.com/Alibaba-Agent-Sandbox/python-sdk/pull/142 must land first; latest-head checks/review and merge are verified separately. This is not an npm publication or whole-template cloud claim.
