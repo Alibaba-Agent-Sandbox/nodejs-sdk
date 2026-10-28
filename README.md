@@ -1,20 +1,14 @@
-# @agent-sandbox/sdk
+# Agent Sandbox Node.js SDK
 
 **English** | [中文](README.zh-CN.md)
 
-Node.js client for [Agent Sandbox](https://github.com/alibaba-agent-sandbox/python-sdk). Node.js 20 or newer. ESM only.
+Call sandbox application services from JavaScript or TypeScript. `@agent-sandbox/sdk` provides an HTTP `ServerClient` for running shell commands and transferring files, plus shared configuration-name helpers.
 
-This package is the **first slice** of the Node.js SDK. It contains:
-
-- the **configuration-name table** (one environment variable per key)
-- `ServerClient`, an **in-sandbox HTTP client** for `agent-sandbox-server` (`agent_sandbox.server`)
-
-It is **not** a port of `Sandbox.create`, cloud providers, or the server SDK. Creating a cloud sandbox still belongs to the Python SDK and the `abx` CLI.
+Requires Node.js 20+ and ESM. Create the sandbox and start its service with the [abx CLI](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox) or [Python SDK](https://github.com/Alibaba-Agent-Sandbox/python-sdk); this package connects to that running service.
 
 ## Install
 
-On 2026-10-18 the public npm metadata endpoint for `@agent-sandbox/sdk` returned 404.
-Build the source package until the matching release is available on your registry:
+Build the package from source:
 
 ```bash
 git clone https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk.git
@@ -24,125 +18,65 @@ npm run build
 npm pack
 ```
 
-This checkout's version 0.1.0 produces `agent-sandbox-sdk-0.1.0.tgz` with built
-`dist/` exports. In your application, install that generated archive:
+In your application, install the generated `agent-sandbox-sdk-0.1.0.tgz` archive, using its actual path:
 
 ```bash
-npm install /absolute/path/to/agent-sandbox-sdk-0.1.0.tgz
+npm install ../nodejs-sdk/agent-sandbox-sdk-0.1.0.tgz
 ```
 
-When the release exists on your configured registry, `npm install @agent-sandbox/sdk`
-uses the same import surface. No publication is implied by this source recipe.
-For local development, `npm test` builds and runs `node:test`; the real local
-example needs the Python server installed as described in [examples](examples/README.md).
+The SDK is currently distributed from source; the public npm package is not available.
 
-## ServerClient
+## Quick start
 
-`ServerClient` speaks HTTP to a server started with `python3 -m agent_sandbox.server serve` (default port 9000). These four calls are the ones the local agent loop uses. They are enabled by default:
-
-| Method | Request |
-| --- | --- |
-| `health()` | `GET /health` |
-| `process.shell(command)` | `POST /shell` with JSON `{ "command": "..." }` |
-| `files.upload(path, data)` | `POST /files/upload-stream` with JSON `{ "path", "content_base64" }` |
-| `files.download(path)` / `files.readText(path)` | `GET /files/download-stream?path=` |
-
-`cwd`, `env`, and `timeout` are added to the shell body only when you set them. The server tokenises `command`; it does not run a shell. A bearer token, when passed to the constructor, is sent as `Authorization: Bearer` (the same secret as `ABX_SERVER_TOKEN`).
-
-Opt-in capability groups (`dev_tools`, `browser`, `agents`) stay off unless `ABX_SERVER_ENABLED_GROUPS` lists them. That variable is the only group switch. Agents routes answer with `X-Agent-Sandbox-*` headers (for example `X-Agent-Sandbox-Local`). This client does not call those routes.
+Use a running `agent-sandbox-server` endpoint. The [local example](examples/README.md) explains how to start one.
 
 ```js
 import { ServerClient } from "@agent-sandbox/sdk";
 
-const server = new ServerClient("http://127.0.0.1:9000");
-if (await server.health()) {
-  const ran = await server.process.shell("python3 -c 'print(2 + 2)'");
-  console.log(ran.stdout); // "4\n"
+const server = new ServerClient("http://127.0.0.1:9000", {
+  token: process.env.ABX_SERVER_TOKEN,
+});
+try {
+  if (await server.health()) {
+    const result = await server.process.shell("python3 -c 'print(2 + 2)'");
+    console.log(result.stdout);
+    await server.files.upload("/tmp/result.txt", Buffer.from(result.stdout));
+    console.log(await server.files.readText("/tmp/result.txt"));
+  }
+} finally {
+  await server.close();
 }
-await server.close();
 ```
 
-`examples/agent-loop.mjs` starts that local server and runs the same four steps as the Python scenario `examples/scenarios/agent_loop_local.py`: health, `python3 -c 'print(2 + 2)'`, write and read `result.txt`, then `SIGTERM`. The recorded run is in [examples/README.md](examples/README.md).
+`ABX_SERVER_TOKEN` is the application token configured for that service. For provider gateways, pass the exact service URL and the provider's `gatewayHeaders`; see [authentication and gateway connections](docs/server-client.md). Keep the application token separate from the provider API key.
 
-## Gateway and application authentication
+## Supported operations
 
-For a provider port gateway, pass the exact sandbox/port URL including its proxy
-prefix and query. The client preserves existing query bytes and appends operation
-parameters without replacing gateway parameters. All redirects are rejected,
-including redirects to another sandbox on the same origin. URL userinfo and
-request paths that escape the bound prefix are rejected. Raw or recursively
-encoded control characters, path separators and dot traversal are validated
-before URL normalization. Duplicate or recursively equivalent gateway query
-keys cannot be introduced by the base URL or an operation.
+| Method | Purpose |
+| --- | --- |
+| `health()` | Check the application service |
+| `process.shell(command, options)` | Execute a process and read its result |
+| `files.upload(path, data)` | Upload bytes |
+| `files.download(path)` / `files.readText(path)` | Download bytes or text |
+| `close()` | Release the client |
 
-Use `token` for the application service token and `gatewayHeaders` for the
-provider gateway's headers. `headers` contains other application headers. Header
-names must not overlap between groups; an existing `Authorization` header cannot
-be combined with `token`. Authority and transport headers cannot be overridden.
-The public `baseUrl` and connection errors omit query credentials. Never pass a
-provider control-plane API key as the application token. This client accepts
-prefix-bound HTTP URLs; operation-specific signed path bindings must use the provider
-adapter's operation transport. This prefix client does not accept those bindings.
+Commands are tokenized by the server; use `sh -c` when shell expansion or pipes are needed. Cloud lifecycle, interpreter, PTY and browser clients are outside this package's current scope. Closing the HTTP client leaves the sandbox running; delete the sandbox through the tool that created it.
 
-The explicit application `token` is also sent as `X-Access-Token` when no supplied header already occupies that name, case-insensitively. Bearer is retained for existing services. Caller and gateway headers are copied for each request and never overwritten; requests without a token gain no application credentials. This supports server proxies that strip Authorization using the server's existing authentication header.
-
-## Configuration names
-
-The table exports configuration names. `readEnv` only reads a value; it does not apply these fields to `ServerClient`. Retired retry settings are not exported.
-
-`src/config-keys.json` is the canonical list, exported from `python -m agent_sandbox.utils.config_keys --json`. Each key has exactly one environment variable. There are no aliases. `readEnv` reads only that name.
-
-`configSchema.reserved_provider_ids` follows the
-[Python registry](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/145341d462df2f4753c03a62365114f1872acd1a/client-sdk/src/agent_sandbox/utils/config_keys.py):
-built-in/core identifiers stay reserved, while the installable catalog id `e2b`
-is available. Provider execution belongs to the Python SDK and `abx`.
-
-Product keys use the `ABX_` prefix: `ABX_SANDBOX_API_KEY`, `ABX_SANDBOX_BASE_URL`, `ABX_SANDBOX_DOMAIN`, `ABX_PROVIDER`.
-
-Where the vendor already publishes a name, that name is the environment variable: `ALICLOUD_ACCESS_KEY_ID`, `ALICLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`, and `GITHUB_TOKEN`.
+## Configuration helpers
 
 ```js
 import { envName, readEnv } from "@agent-sandbox/sdk";
 
 envName("sandbox_api_key"); // ABX_SANDBOX_API_KEY
-envName("access_key_id", "alicloud-express"); // ALICLOUD_ACCESS_KEY_ID
 readEnv("sandbox_api_key", process.env);
 ```
 
-| Key | Scope | Environment variable | Description |
-| --- | --- | --- | --- |
-| `provider` | core | `ABX_PROVIDER` | Default provider id (see 'abx provider list') |
-| `sandbox_api_key` | core | `ABX_SANDBOX_API_KEY` | Agent Sandbox API key of the active provider |
-| `sandbox_base_url` | core | `ABX_SANDBOX_BASE_URL` | Agent Sandbox API endpoint of the active provider |
-| `sandbox_domain` | core | `ABX_SANDBOX_DOMAIN` | Envd data-plane domain |
-| `http_timeout` | core | `ABX_HTTP_TIMEOUT` | HTTP request timeout in seconds |
-| `http2` | core | `ABX_HTTP2` | Use HTTP/2 |
-| `max_connections` | core | `ABX_MAX_CONNECTIONS` | |
-| `max_keepalive_connections` | core | `ABX_MAX_KEEPALIVE_CONNECTIONS` | |
-| `keepalive_expiry` | core | `ABX_KEEPALIVE_EXPIRY` | |
-| `ws_ping_interval` | core | `ABX_WS_PING_INTERVAL` | |
-| `log_level` | core | `ABX_LOG_LEVEL` | Log level |
-| `default_template` | core | `ABX_DEFAULT_TEMPLATE` | Template used when none is given |
-| `github_token` | core | `GITHUB_TOKEN` | GitHub token for the template index |
-| `template_index_url` | core | `ABX_TEMPLATE_INDEX_URL` | |
-| `template_dir` | core | `ABX_TEMPLATE_DIR` | |
-| `mcp_auth_token` | core | `ABX_MCP_AUTH_TOKEN` | |
-| `mcp_allowed_origins` | core | `ABX_MCP_ALLOWED_ORIGINS` | |
-| `mcp_runtime_dir` | core | `ABX_MCP_RUNTIME_DIR` | |
-| `region` | alicloud-express | `ALIBABA_CLOUD_REGION_ID` | Region id (derives the API URL and domain) |
-| `access_key_id` | alicloud-express | `ALICLOUD_ACCESS_KEY_ID` | Alibaba Cloud AccessKey ID |
-| `access_key_secret` | alicloud-express | `ALICLOUD_ACCESS_KEY_SECRET` | Alibaba Cloud AccessKey secret |
+These helpers look up names and values; they do not configure `ServerClient` or execute provider operations. See the [configuration reference](docs/configuration.md) for the complete table.
 
-## What this package does not do
+## Development
 
-- `Sandbox.create`, templates, or any cloud control plane
-- provider drivers (including Alibaba Cloud Express beyond the env-name table)
-- the in-sandbox server itself (`agent-sandbox-server` remains Python)
-- PTY, browser, devtools, or the rest of the Python `ServerClient` surface
+Run `npm ci`, `npm run typecheck` and `npm test`. The tests build the SDK first. See [examples](examples/README.md) for the local agent loop and its Python runtime prerequisite. Report problems in [Issues](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/issues).
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
-
-
-The application authentication regression cases are shared with the Python client and CLI from the Python SDK contract source. This library takes credentials through constructor options; it has no interactive setup command.
+[Apache-2.0](LICENSE). See [NOTICE](NOTICE) for attribution.

@@ -60,3 +60,5 @@ state. A local/runtime result is not cloud acceptance or package publication.
 - [Coordinated public runtime a6](notes/proposed/process/2026-10-25-public-runtime-a6.md) · [verification](evidence/verify/2026-10-25-public-runtime-a6.md).
 
 - [Shared application authentication tests](notes/proposed/feature/2026-10-26-shared-application-auth-tests.md) · [verification](evidence/verify/2026-10-26-shared-application-auth-tests.md).
+
+- [README audience review](notes/proposed/process/2026-10-28-readme-audience-review.md) · [verification](evidence/verify/2026-10-28-readme-audience-review.md).
