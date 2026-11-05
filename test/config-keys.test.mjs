@@ -32,7 +32,7 @@ test("reserved provider ids keep the E2B catalog id available", () => {
 test("fixture is copied through with one env name per key", () => {
   assert.equal(configSchema.schema_version, 1);
   assert.equal(CONFIG_KEYS.length, source.keys.length);
-  assert.equal(CONFIG_KEYS.length, 21);
+  assert.equal(CONFIG_KEYS.length, 22);
   for (const [index, key] of CONFIG_KEYS.entries()) {
     const raw = source.keys[index];
     assert.equal(key.key, raw.key);
@@ -56,6 +56,16 @@ test("official names are the env vars", () => {
   assert.equal(envName("region", "alicloud-express"), "ALIBABA_CLOUD_REGION_ID");
   assert.equal(envName("access_key_id", "alicloud-express"), "ALICLOUD_ACCESS_KEY_ID");
   assert.equal(envName("access_key_secret", "alicloud-express"), "ALICLOUD_ACCESS_KEY_SECRET");
+  assert.equal(envName("security_token", "alicloud-express"), "ALIBABA_CLOUD_SECURITY_TOKEN");
+});
+
+test("STS configuration keeps its single secret credential name", () => {
+  const key = CONFIG_KEYS.find(key => key.scope === "alicloud-express" && key.key === "security_token");
+  assert.equal(key.secret, true);
+  assert.equal(key.credential, true);
+  assert.deepEqual(key.env_names, ["ALIBABA_CLOUD_SECURITY_TOKEN"]);
+  assert.equal(readEnv("security_token", { ALIBABA_CLOUD_SECURITY_TOKEN: "fixture-session" }, "alicloud-express"), "fixture-session");
+  assert.equal(readEnv("security_token", { ALICLOUD_SECURITY_TOKEN: "fixture-retired" }, "alicloud-express"), undefined);
 });
 
 test("only canonical env names are accepted", () => {

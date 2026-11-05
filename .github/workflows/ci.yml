@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Alibaba-Agent-Sandbox/python-sdk
-          ref: 98642ae6712a5017e187cae7952a2b3c819c1ece
+          ref: 1aef5f67ab54131ab1e6a060034a3c1f8b5c6e5d
           path: vendor/python-sdk
           persist-credentials: false
       - name: Verify shared application authentication vectors

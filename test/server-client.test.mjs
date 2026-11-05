@@ -31,6 +31,115 @@ function readBody(req) {
   });
 }
 
+test("named application commands preserve business arguments and gateway binding", async () => {
+  const hits = [];
+  const command = {
+    name: "inspect.inputs", description: "Inspect typed inputs",
+    args: [{ name: "timeout", type: "integer", required: true, default: null, description: "Business timeout" }],
+  };
+  const server = await listen(async (req, res) => {
+    const body = await readBody(req);
+    hits.push({ url: req.url, method: req.method, body,
+      app: req.headers.authorization, traffic: req.headers["e2b-traffic-access-token"] });
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify(req.method === "GET" ? { commands: [command] } : { result: JSON.parse(body) }));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}/proxy/owned/9000?sig=a%2Fb`, {
+    token: "application-token", gatewayHeaders: { "e2b-traffic-access-token": "traffic-token" },
+  });
+  const arguments_ = { timeout: 5, name: "business-name", arguments: "business-argument",
+    server_port: 42, requestTimeout: 9, values: ["a", "b"], enabled: false };
+  try {
+    assert.deepEqual(await client.commands.list(), [command]);
+    assert.deepEqual(await client.commands.invoke("inspect.inputs", arguments_, { requestTimeout: 3 }), arguments_);
+    assert.equal(hits[0].url, "/proxy/owned/9000/commands?sig=a%2Fb");
+    assert.equal(hits[1].url, "/proxy/owned/9000/commands/inspect.inputs?sig=a%2Fb");
+    assert.deepEqual(JSON.parse(hits[1].body), arguments_);
+    assert.equal(hits[1].app, "Bearer application-token");
+    assert.equal(hits[1].traffic, "traffic-token");
+  } finally { await client.close(); await server.close(); }
+});
+
+test("named application commands preserve failures without replaying mutations", async () => {
+  let hits = 0;
+  let status = 404;
+  const server = await listen(async (req, res) => {
+    await readBody(req); hits += 1;
+    res.statusCode = status;
+    res.end(JSON.stringify({ error: "Command failed", type: "ValueError", code: "command_failed" }));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}`);
+  try {
+    for (status of [400, 401, 403, 404, 500, 503]) {
+      await assert.rejects(client.commands.invoke("action", {}), error =>
+        error instanceof ServerAPIError && error.statusCode === status && error.errorCode === "command_failed");
+    }
+    assert.equal(hits, 6);
+    for (const name of ["", ".", "..", "a/b", "a\\b", "a\n", "%2e%2e"]) {
+      await assert.rejects(client.commands.invoke(name, {}), TypeError);
+    }
+    assert.equal(hits, 6);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("named application commands reject malformed responses and accept null results", async () => {
+  let response = { commands: "invalid" };
+  const server = await listen(async (req, res) => {
+    await readBody(req); res.end(JSON.stringify(response));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}`);
+  try {
+    await assert.rejects(client.commands.list(), error => error instanceof ServerAPIError && error.errorType === "ProtocolError");
+    response = { commands: [{ name: "bad", args: [{ name: 42 }] }] };
+    await assert.rejects(client.commands.list(), ServerAPIError);
+    response = {};
+    await assert.rejects(client.commands.invoke("action", {}), ServerAPIError);
+    response = { result: null };
+    assert.equal(await client.commands.invoke("action", {}), null);
+    await assert.rejects(client.commands.invoke("action", []), TypeError);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("named application command timeout does not replay a running function", async () => {
+  let calls = 0;
+  const server = await listen(async (req, res) => {
+    await readBody(req);
+    calls += 1;
+    await new Promise(resolve => setTimeout(resolve, 100));
+    res.end(JSON.stringify({ result: "finished remotely" }));
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}`, { timeout: 5 });
+  try {
+    await assert.rejects(client.commands.invoke("slow", {}, { requestTimeout: 2_147_483.648 }), TypeError);
+    await assert.rejects(client.commands.invoke("slow", { timeout: 42 }, { requestTimeout: 0.0105 }), ConnectionError);
+    await new Promise(resolve => setTimeout(resolve, 150));
+    assert.equal(calls, 1);
+  } finally { await client.close(); await server.close(); }
+});
+
+test("named command timeout and close include reading the response body", async () => {
+  let bodyStarted;
+  let started = new Promise(resolve => { bodyStarted = resolve; });
+  const server = await listen(async (req, res) => {
+    await readBody(req);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.write('{"result":');
+    bodyStarted();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    res.end('"finished"}');
+  });
+  const client = new ServerClient(`http://127.0.0.1:${server.port}`);
+  try {
+    await assert.rejects(client.commands.invoke("slow_body", {}, { requestTimeout: 0.02 }), ConnectionError);
+    started = new Promise(resolve => { bodyStarted = resolve; });
+    const pending = client.commands.invoke("slow_body", {});
+    await started;
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await client.close();
+    await assert.rejects(pending, ConnectionError);
+  } finally { await client.close(); await server.close(); }
+});
+
 test("health, shell, upload-stream, and download-stream match the server JSON", async () => {
   const hits = [];
   const server = await listen(async (req, res) => {

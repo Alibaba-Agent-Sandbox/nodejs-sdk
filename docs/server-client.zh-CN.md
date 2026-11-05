@@ -6,7 +6,7 @@
 
 ## ServerClient
 
-`ServerClient` 通过 HTTP 访问 `python3 -m agent_sandbox.server serve` 启动的进程（默认端口 9000）。本地 agent 循环用到的是下面四个调用，它们默认开启：
+`ServerClient` 通过 HTTP 访问 `python3 -m agent_sandbox.server serve` 启动的进程（默认端口 9000）。下列端点默认开启，调用应用函数前需要先完成注册：
 
 | 方法 | 请求 |
 | --- | --- |
@@ -14,6 +14,8 @@
 | `process.shell(command)` | `POST /shell`，JSON `{ "command": "..." }` |
 | `files.upload(path, data)` | `POST /files/upload-stream`，JSON `{ "path", "content_base64" }` |
 | `files.download(path)` / `files.readText(path)` | `GET /files/download-stream?path=` |
+| `commands.list()` | `GET /commands` |
+| `commands.invoke(name, arguments, options)` | `POST /commands/{name}`，业务参数作为 JSON 请求体 |
 
 只有在你设置了 `cwd`、`env`、`timeout` 时，它们才会出现在 shell 请求体里。服务端对 `command` 做分词，不会交给 shell。构造时传入的 bearer token 会以 `Authorization: Bearer` 发送（与 `ABX_SERVER_TOKEN` 是同一个密钥）。
 
@@ -47,3 +49,20 @@ await server.close();
 绑定代理前缀的 HTTP URL；按操作签名的路径绑定需要使用提供方适配器的逐操作传输接口，不能传入本前缀客户端。
 
 显式应用 `token` 还会通过 `X-Access-Token` 发送，前提是调用方提供的请求头未占用该名称（不区分大小写）。Bearer 仍然保留以兼容现有服务。每次请求复制调用方与网关请求头，不会覆盖它们；未提供 token 时不会添加应用凭据。该行为使用服务端已有认证请求头，兼容剥离 Authorization 的服务端代理。
+## 应用命令调用
+
+启动服务时加载对应命令模块，例如 `python3 -m agent_sandbox.server serve --commands commands.py`。`commands.list()` 返回当前身份可见的命令名称、说明和参数信息。使用 `@command()` 注册的业务函数与 Shell 执行、提供方管理命令分开。
+
+```js
+const commands = await server.commands.list();
+const result = await server.commands.invoke("job", {
+  timeout: 5,
+  name: "daily-report",
+}, { requestTimeout: 30 });
+```
+
+`requestTimeout` 是 HTTP 请求超时，单位为秒。业务参数保持原值写入 JSON，包括 `timeout`、`name`、`arguments` 等名称。结果可以是任意 JSON 值，包括 `null`。TypeScript 可使用 `invoke<Result>(...)` 声明预期类型，业务结果的运行时校验由调用方负责。
+
+服务端拒绝或执行失败时，保留 `ServerAPIError` 的 `statusCode`、`errorType`、`errorCode`。请求超时抛出 `ConnectionError`，此时远端函数可能已经执行；客户端不会自动重试。服务端仍会检查调用身份是否有权运行该命令。
+
+请求超时支持小数秒，向上取整到毫秒；上限为 2147483.647 秒。无效值会在发送请求之前被拒绝。

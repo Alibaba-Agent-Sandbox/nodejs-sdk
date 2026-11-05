@@ -11,13 +11,13 @@ The table exports configuration names. `readEnv` only reads a value; it does not
 `src/config-keys.json` is the canonical list, exported from `python -m agent_sandbox.utils.config_keys --json`. Each key has exactly one environment variable. There are no aliases. `readEnv` reads only that name.
 
 `configSchema.reserved_provider_ids` follows the
-[Python registry](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/145341d462df2f4753c03a62365114f1872acd1a/client-sdk/src/agent_sandbox/utils/config_keys.py):
+[Python registry](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/main/client-sdk/src/agent_sandbox/utils/config_keys.py):
 built-in/core identifiers stay reserved, while the installable catalog id `e2b`
 is available. Provider execution belongs to the Python SDK and `abx`.
 
 Product keys use the `ABX_` prefix: `ABX_SANDBOX_API_KEY`, `ABX_SANDBOX_BASE_URL`, `ABX_SANDBOX_DOMAIN`, `ABX_PROVIDER`.
 
-Where the vendor already publishes a name, that name is the environment variable: `ALICLOUD_ACCESS_KEY_ID`, `ALICLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`, and `GITHUB_TOKEN`.
+Where the vendor already publishes a name, that name is the environment variable: `ALICLOUD_ACCESS_KEY_ID`, `ALICLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_SECURITY_TOKEN`, `ALIBABA_CLOUD_REGION_ID`, and `GITHUB_TOKEN`.
 
 ```js
 import { envName, readEnv } from "@agent-sandbox/sdk";
@@ -50,3 +50,4 @@ readEnv("sandbox_api_key", process.env);
 | `region` | alicloud-express | `ALIBABA_CLOUD_REGION_ID` | Region id (derives the API URL and domain) |
 | `access_key_id` | alicloud-express | `ALICLOUD_ACCESS_KEY_ID` | Alibaba Cloud AccessKey ID |
 | `access_key_secret` | alicloud-express | `ALICLOUD_ACCESS_KEY_SECRET` | Alibaba Cloud AccessKey secret |
+| `security_token` | alicloud-express | `ALIBABA_CLOUD_SECURITY_TOKEN` | STS session token used with temporary AccessKey credentials |

@@ -40,6 +40,27 @@ export interface TransferResult {
   size: number;
 }
 
+/** An argument advertised by a registered application command. */
+export interface ServerCommandArg {
+  name: string;
+  type: string;
+  required: boolean;
+  default: unknown;
+  description: string;
+}
+
+/** A registered application command returned by `GET /commands`. */
+export interface ServerCommand {
+  name: string;
+  description: string;
+  args: ServerCommandArg[];
+}
+
+export interface CommandInvocationOptions {
+  /** HTTP request timeout in seconds; never included in business arguments. */
+  requestTimeout?: number;
+}
+
 interface RequestOptions {
   params?: Readonly<Record<string, string | number | boolean>>;
   jsonBody?: Readonly<Record<string, unknown>>;
@@ -110,7 +131,7 @@ function errorFromResponse(status: number, body: unknown, endpoint: string): Ser
  *
  * This slice talks to the same routes the local Python agent loop uses:
  * `GET /health`, `POST /shell`, `POST /files/upload-stream`, and
- * `GET /files/download-stream`. Those endpoints are on by default. Opt-in
+ * `GET /files/download-stream`, and registered application commands. Those endpoints are on by default. Opt-in
  * groups (`dev_tools`, `browser`, `agents`) are enabled only with
  * `ABX_SERVER_ENABLED_GROUPS`. A bearer token, when set, is sent as
  * `Authorization: Bearer` (the server's `ABX_SERVER_TOKEN`). Agents responses
@@ -122,6 +143,7 @@ export class ServerClient {
   readonly timeout: number;
   readonly files: ServerFilesApi;
   readonly process: ServerProcessApi;
+  readonly commands: ServerCommandsApi;
 
   #endpoint: URL;
   #token: string | undefined;
@@ -161,6 +183,7 @@ export class ServerClient {
     this.#headers = Object.fromEntries(headers);
     this.files = new ServerFilesApi(this);
     this.process = new ServerProcessApi(this);
+    this.commands = new ServerCommandsApi(this);
   }
 
   /** Headers sent on every request. */
@@ -228,16 +251,46 @@ export class ServerClient {
       body = JSON.stringify(options.jsonBody);
     }
     const timeoutSeconds = options.timeout ?? this.timeout;
+    const timeoutMilliseconds = Math.ceil(timeoutSeconds * 1000);
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutMilliseconds > 2_147_483_647) {
+      throw new TypeError("Request timeout must be positive and at most 2147483.647 seconds");
+    }
     const controller = new AbortController();
     this.#controllers.add(controller);
-    const signal = AbortSignal.any([
-      AbortSignal.timeout(Math.max(1, timeoutSeconds * 1000)),
-      controller.signal,
-    ]);
-    let response: Response;
     try {
-      response = await fetch(url, { method, headers, body, signal, redirect: "manual" });
+      const signal = AbortSignal.any([
+        AbortSignal.timeout(Math.max(1, timeoutMilliseconds)),
+        controller.signal,
+      ]);
+      const response = await fetch(url, { method, headers, body, signal, redirect: "manual" });
+
+      if (response.status >= 300 && response.status < 400) {
+        await response.body?.cancel();
+        throw new ServerAPIError("Sandbox server redirects are not allowed", {
+          statusCode: response.status, errorType: "BindingError", endpoint,
+        });
+      }
+      const text = await response.text();
+      let parsed: unknown = null;
+      if (text) {
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text;
+        }
+      }
+      if (response.status >= 400) {
+        throw errorFromResponse(response.status, parsed, endpoint);
+      }
+      if (!isRecord(parsed)) {
+        throw new ServerAPIError(
+          `Sandbox server returned a non-JSON object (HTTP ${response.status})`,
+          { statusCode: response.status, errorType: "ProtocolError", endpoint },
+        );
+      }
+      return parsed;
     } catch (err) {
+      if (err instanceof ServerAPIError) throw err;
       if (this.#closed || controller.signal.aborted) {
         throw new ConnectionError(`ServerClient is closed (${this.baseUrl})`);
       }
@@ -251,32 +304,63 @@ export class ServerClient {
     } finally {
       this.#controllers.delete(controller);
     }
+  }
+}
 
-    if (response.status >= 300 && response.status < 400) {
-      await response.body?.cancel();
-      throw new ServerAPIError("Sandbox server redirects are not allowed", {
-        statusCode: response.status, errorType: "BindingError", endpoint,
+/** Discover and invoke business functions registered on the application server. */
+export class ServerCommandsApi {
+  constructor(private readonly client: ServerClient) {}
+
+  /** `GET /commands`. Only commands visible to the authenticated caller are returned. */
+  async list(): Promise<ServerCommand[]> {
+    const data = await this.client.send("list_commands", "GET", "/commands");
+    const invalid = (): never => {
+      throw new ServerAPIError("Server returned invalid command metadata", {
+        statusCode: 200, errorType: "ProtocolError", endpoint: "list_commands",
+      });
+    };
+    if (!Array.isArray(data.commands)) return invalid();
+    return data.commands.map((command: unknown): ServerCommand => {
+      if (!isRecord(command) || typeof command.name !== "string" ||
+        (command.description !== undefined && typeof command.description !== "string") ||
+        (command.args !== undefined && !Array.isArray(command.args))) return invalid();
+      const args = (command.args ?? []) as unknown[];
+      return {
+        name: command.name,
+        description: command.description ?? "",
+        args: args.map((arg: unknown): ServerCommandArg => {
+          if (!isRecord(arg) || typeof arg.name !== "string" ||
+            (arg.type !== undefined && typeof arg.type !== "string") ||
+            (arg.required !== undefined && typeof arg.required !== "boolean") ||
+            (arg.description !== undefined && typeof arg.description !== "string")) return invalid();
+          return { name: arg.name, type: arg.type ?? "string", required: arg.required ?? true,
+            default: arg.default ?? null, description: arg.description ?? "" };
+        }),
+      };
+    });
+  }
+
+  /** `POST /commands/{name}`. Business arguments and transport options stay separate. No retries. */
+  async invoke<T = unknown>(
+    name: string,
+    arguments_: Readonly<Record<string, unknown>> = {},
+    options: CommandInvocationOptions = {},
+  ): Promise<T> {
+    if (typeof name !== "string" || !name) throw new TypeError("Command name must be a non-empty string");
+    if (!isRecord(arguments_)) throw new TypeError("Command arguments must be a JSON object");
+    if (options.requestTimeout !== undefined &&
+      (!Number.isFinite(options.requestTimeout) || options.requestTimeout <= 0)) {
+      throw new TypeError("Command request timeout must be a positive number of seconds");
+    }
+    const data = await this.client.send("run_command", "POST", `/commands/${encodeURIComponent(name)}`, {
+      jsonBody: arguments_, timeout: options.requestTimeout,
+    });
+    if (!Object.hasOwn(data, "result")) {
+      throw new ServerAPIError("Server returned no command result", {
+        statusCode: 200, errorType: "ProtocolError", endpoint: "run_command",
       });
     }
-    const text = await response.text();
-    let parsed: unknown = null;
-    if (text) {
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        parsed = text;
-      }
-    }
-    if (response.status >= 400) {
-      throw errorFromResponse(response.status, parsed, endpoint);
-    }
-    if (!isRecord(parsed)) {
-      throw new ServerAPIError(
-        `Sandbox server returned a non-JSON object (HTTP ${response.status})`,
-        { statusCode: response.status, errorType: "ProtocolError", endpoint },
-      );
-    }
-    return parsed;
+    return data.result as T;
   }
 }
 
