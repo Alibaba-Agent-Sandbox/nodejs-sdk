@@ -2,7 +2,7 @@
 
 **中文** | [English](README.md)
 
-在 JavaScript 或 TypeScript 中调用沙箱应用服务。`@agent-sandbox/sdk` 提供用于执行命令和传输文件的 HTTP `ServerClient`，以及共享配置名查询工具。
+在 JavaScript 或 TypeScript 中调用沙箱应用服务。`@agent-sandbox/sdk` 提供用于执行 Shell 命令、调用已注册应用函数和传输文件的 HTTP `ServerClient`，以及共享配置名查询工具。
 
 需要 Node.js 20+，仅支持 ESM。先用 [abx CLI](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox) 或 [Python SDK](https://github.com/Alibaba-Agent-Sandbox/python-sdk)创建沙箱并启动服务，再通过本包连接。
 
@@ -56,11 +56,15 @@ try {
 | --- | --- |
 | `health()` | 检查应用服务 |
 | `process.shell(command, options)` | 执行进程并读取结果 |
+| `commands.list()` | 查询已注册应用命令 |
+| `commands.invoke(name, arguments, options)` | 以 JSON 参数调用应用命令 |
 | `files.upload(path, data)` | 上传字节 |
 | `files.download(path)` / `files.readText(path)` | 下载字节或文本 |
 | `close()` | 释放客户端 |
 
-服务端会拆分命令参数，需要变量展开或管道时使用 `sh -c`。当前包不提供云端生命周期、解释器、PTY 或浏览器客户端。关闭 HTTP 客户端后沙箱仍在运行，应通过创建沙箱的工具将其删除。
+服务端会拆分 Shell 命令参数，需要变量展开或管道时使用 `sh -c`。调用应用命令前，服务必须已加载对应函数。业务 JSON 参数与请求选项分开，因此名为 `timeout` 的业务字段也能完整传递：`server.commands.invoke("job", { timeout: 5 }, { requestTimeout: 30 })`。详见 [HTTP 客户端参考](docs/server-client.zh-CN.md)。
+
+当前包不提供云端生命周期、解释器、PTY 或浏览器客户端。关闭 HTTP 客户端后沙箱仍在运行，应通过创建沙箱的工具将其删除。
 
 ## 配置工具
 

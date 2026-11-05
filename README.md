@@ -2,7 +2,7 @@
 
 **English** | [中文](README.zh-CN.md)
 
-Call sandbox application services from JavaScript or TypeScript. `@agent-sandbox/sdk` provides an HTTP `ServerClient` for running shell commands and transferring files, plus shared configuration-name helpers.
+Call sandbox application services from JavaScript or TypeScript. `@agent-sandbox/sdk` provides an HTTP `ServerClient` for running shell commands, invoking registered application functions and transferring files, plus shared configuration-name helpers.
 
 Requires Node.js 20+ and ESM. Create the sandbox and start its service with the [abx CLI](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox) or [Python SDK](https://github.com/Alibaba-Agent-Sandbox/python-sdk); this package connects to that running service.
 
@@ -56,11 +56,15 @@ try {
 | --- | --- |
 | `health()` | Check the application service |
 | `process.shell(command, options)` | Execute a process and read its result |
+| `commands.list()` | Discover registered application commands |
+| `commands.invoke(name, arguments, options)` | Invoke an application command with JSON arguments |
 | `files.upload(path, data)` | Upload bytes |
 | `files.download(path)` / `files.readText(path)` | Download bytes or text |
 | `close()` | Release the client |
 
-Commands are tokenized by the server; use `sh -c` when shell expansion or pipes are needed. Cloud lifecycle, interpreter, PTY and browser clients are outside this package's current scope. Closing the HTTP client leaves the sandbox running; delete the sandbox through the tool that created it.
+Shell commands are tokenized by the server; use `sh -c` when shell expansion or pipes are needed. Registered application commands require a service that has loaded those functions. Their JSON arguments stay separate from request options, so a business field named `timeout` is preserved: `server.commands.invoke("job", { timeout: 5 }, { requestTimeout: 30 })`. See the [HTTP client reference](docs/server-client.md).
+
+Cloud lifecycle, interpreter, PTY and browser clients are outside this package's current scope. Closing the HTTP client leaves the sandbox running; delete the sandbox through the tool that created it.
 
 ## Configuration helpers
 

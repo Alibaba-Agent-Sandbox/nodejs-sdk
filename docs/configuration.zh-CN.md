@@ -11,13 +11,13 @@
 `src/config-keys.json` 是规范列表，来自 `python -m agent_sandbox.utils.config_keys --json`。每个 key 只有一个环境变量，没有别名。`readEnv` 只读这个名字。
 
 `configSchema.reserved_provider_ids` 遵循
-[Python 注册表](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/145341d462df2f4753c03a62365114f1872acd1a/client-sdk/src/agent_sandbox/utils/config_keys.py)：
+[Python 注册表](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/main/client-sdk/src/agent_sandbox/utils/config_keys.py)：
 内置及核心标识仍保留，可安装的目录提供方标识 `e2b` 不再保留。
 提供方执行由 Python SDK 和 `abx` 负责。
 
 产品 key 使用 `ABX_` 前缀：`ABX_SANDBOX_API_KEY`、`ABX_SANDBOX_BASE_URL`、`ABX_SANDBOX_DOMAIN`、`ABX_PROVIDER`。
 
-厂商已经公布名字时，环境变量就用那个名字：`ALICLOUD_ACCESS_KEY_ID`、`ALICLOUD_ACCESS_KEY_SECRET`、`ALIBABA_CLOUD_REGION_ID`，以及 `GITHUB_TOKEN`。
+厂商已经公布名字时，环境变量就用那个名字：`ALICLOUD_ACCESS_KEY_ID`、`ALICLOUD_ACCESS_KEY_SECRET`、`ALIBABA_CLOUD_SECURITY_TOKEN`、`ALIBABA_CLOUD_REGION_ID`，以及 `GITHUB_TOKEN`。
 
 ```js
 import { envName, readEnv } from "@agent-sandbox/sdk";
@@ -50,3 +50,4 @@ readEnv("sandbox_api_key", process.env);
 | `region` | alicloud-express | `ALIBABA_CLOUD_REGION_ID` | 地域（用于推导 API 地址和域名） |
 | `access_key_id` | alicloud-express | `ALICLOUD_ACCESS_KEY_ID` | 阿里云 AccessKey ID |
 | `access_key_secret` | alicloud-express | `ALICLOUD_ACCESS_KEY_SECRET` | 阿里云 AccessKey Secret |
+| `security_token` | alicloud-express | `ALIBABA_CLOUD_SECURITY_TOKEN` | 与临时 AccessKey 配套使用的 STS 会话令牌 |

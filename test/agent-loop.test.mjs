@@ -5,8 +5,63 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { createServer } from "node:net";
+
+import { ServerAPIError, ServerClient } from "../dist/index.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+test("named application commands work with the actual Python runtime", { timeout: 60_000 }, async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "node-sdk-commands-"));
+  const reservation = createServer();
+  await new Promise((resolve, reject) => {
+    reservation.once("error", reject);
+    reservation.listen(0, "127.0.0.1", resolve);
+  });
+  const port = reservation.address().port;
+  await new Promise((resolve, reject) => reservation.close(error => error ? reject(error) : resolve()));
+  const commands = path.join(directory, "commands.py");
+  await writeFile(commands, `from agent_sandbox.server import command
+
+@command("inspect_inputs")
+def inspect_inputs(timeout: int, name: str, arguments: str, server_port: int,
+                   requestTimeout: int, labels: list[str], enabled: bool) -> dict:
+    return {"timeout": timeout, "name": name, "arguments": arguments,
+            "server_port": server_port, "requestTimeout": requestTimeout,
+            "labels": labels, "enabled": enabled}
+`);
+  const child = spawn("python3", ["-m", "agent_sandbox.server", "serve", "--host", "127.0.0.1",
+    "--port", String(port), "--commands", commands], {
+    env: { ...process.env, ABX_SERVER_TOKEN: "fixture-command-token", ABX_SERVER_BASE_DIR: directory },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", chunk => { stderr += chunk; });
+  const exited = new Promise(resolve => child.once("exit", resolve));
+  const client = new ServerClient(`http://127.0.0.1:${port}`, { token: "fixture-command-token", timeout: 1 });
+  try {
+    let ready = false;
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      if (await client.health()) { ready = true; break; }
+      if (child.exitCode !== null) break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    assert.ok(ready, "Python runtime did not start: " + stderr);
+    const listed = await client.commands.list();
+    assert.ok(listed.some(command => command.name === "inspect_inputs" && command.args.some(arg => arg.name === "timeout")));
+    const payload = { timeout: 5, name: "business", arguments: "preserved", server_port: 42,
+      requestTimeout: 7, labels: ["one", "two"], enabled: false };
+    assert.deepEqual(await client.commands.invoke("inspect_inputs", payload, { requestTimeout: 5 }), payload);
+    await assert.rejects(client.commands.invoke("inspect_inputs", {}), error => error instanceof ServerAPIError && error.statusCode === 400);
+    await assert.rejects(client.commands.invoke("missing_command", {}), error => error instanceof ServerAPIError && error.statusCode === 404);
+  } finally {
+    await client.close();
+    if (child.exitCode === null) child.kill("SIGTERM");
+    await exited;
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 function fromPythonRepr(literal) {
   assert.equal(literal.startsWith("'"), true, literal);

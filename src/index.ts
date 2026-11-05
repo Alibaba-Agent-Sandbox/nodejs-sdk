@@ -12,11 +12,15 @@ export { ConnectionError, ServerAPIError } from "./errors.js";
 export {
   DEFAULT_SERVER_PORT,
   ServerClient,
+  ServerCommandsApi,
   ServerFilesApi,
   ServerProcessApi,
 } from "./server-client.js";
 export type {
   ServerClientOptions,
+  ServerCommand,
+  ServerCommandArg,
+  CommandInvocationOptions,
   ShellOptions,
   ShellResult,
   TransferResult,

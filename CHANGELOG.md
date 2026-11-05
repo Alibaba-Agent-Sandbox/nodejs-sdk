@@ -23,6 +23,8 @@
 
 ### Fixed
 
+- Keep request timeout and client-close cancellation active while reading an application response body. / 读取应用响应体期间继续执行超时和客户端关闭取消。
+
 - Reject control characters before URL normalization and recursively encoded namespace escapes/query-key collisions before an authenticated request can reach another sandbox.
 
 - Preserve sandbox proxy prefixes and signed query bytes; reject redirects, URL userinfo, escaping paths and credential/header collisions. Separate gateway headers from the application token and omit signed query credentials from diagnostics.
@@ -34,6 +36,9 @@
   public npm package metadata returns 404 until publication.
 
 ### Added
+
+- Discover and invoke registered application commands with separate business arguments and HTTP request options. / 支持发现和调用已注册应用命令，业务参数与 HTTP 请求选项分开。
+- Export the shared `security_token` configuration name (`ALIBABA_CLOUD_SECURITY_TOKEN`) for STS credentials. / 导出 STS 凭据的共享配置名 `security_token`。
 
 - A PR CI matrix for Node.js 20/22, including the existing real local server loop
   against a pinned Python server source. No publication workflow is added.
