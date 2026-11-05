@@ -28,7 +28,7 @@ The registered-command Python process exited on SIGTERM; its temporary source/da
 
 ## Not verified
 
-The initial implementation head 0b0367e34b03fffdc672e20adb5125bab757e3e6 passed the complete Node20/22 matrix in [run 41992843654](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/actions/runs/41992843654). CI now pins the companion reviewed product commit 09f0e39a598a05244bfdd841ce1253fcdb1deb7e, which includes the shared configuration export; that contract must land before this consumer merges. Independent review is complete. The final follow-up head must pass its own remote checks. This does not certify cloud lifecycle or npm publication.
+The initial implementation head 0b0367e34b03fffdc672e20adb5125bab757e3e6 passed the complete Node20/22 matrix in [run 41992843654](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/actions/runs/41992843654). CI now pins the companion reviewed product commit 653404d4eb1e61c490816e1c8f7b688664b146e1, which includes the shared configuration export; that contract must land before this consumer merges. Independent review is complete. The final follow-up head must pass its own remote checks. This does not certify cloud lifecycle or npm publication.
 
 ## Real private application acceptance
 
