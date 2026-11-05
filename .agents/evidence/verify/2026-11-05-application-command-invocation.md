@@ -2,7 +2,7 @@
 
 - Date: 2026-11-05
 - Change: application-command-invocation; owner Issue https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/issues/23
-- Result: PARTIAL
+- Result: PASS for application HTTP scope; latest-head delivery checks remain required
 - Baseline: 1505b61a10a819c299c25f31ba508af2d8cb4ba6
 - Environment: Node 22.22.2, Python 3.11.15, matching local Python client/server source. No cloud credentials are required or passed to these tests.
 
@@ -28,4 +28,10 @@ The registered-command Python process exited on SIGTERM; its temporary source/da
 
 ## Not verified
 
-The remote matrix and exact companion schema pin remain pending. Independent review is complete. This is application HTTP evidence, not cloud lifecycle acceptance or npm publication.
+The initial implementation head 0b0367e34b03fffdc672e20adb5125bab757e3e6 passed the complete Node20/22 matrix in [run 41992843654](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/actions/runs/41992843654). CI now pins the companion reviewed product commit 09f0e39a598a05244bfdd841ce1253fcdb1deb7e, which includes the shared configuration export; that contract must land before this consumer merges. Independent review is complete. The final follow-up head must pass its own remote checks. This does not certify cloud lifecycle or npm publication.
+
+## Real private application acceptance
+
+The candidate was also exercised against an owned Express sandbox hosting a registered function on an exclusive port. Node command discovery and invocation passed with separate public-gateway and application credentials; conflicting business argument names were preserved. The independent Python/direct-HTTP controls passed and anonymous public traffic returned HTTP403. Deletion was confirmed independently with GET404 and zero owned resources remaining.
+
+An earlier Node controller failed TLS trust with UNABLE_TO_VERIFY_LEAF_SIGNATURE because its minimal child environment dropped already-configured NODE_EXTRA_CA_CERTS/SSL_CERT_FILE. Raw fetch reproduced the same failure. Preserving only the existing trust configuration fixed the controller; certificate verification was never disabled. A separate early object-order comparison was replaced with deep value equality. These controller failures remain distinct from product behavior.

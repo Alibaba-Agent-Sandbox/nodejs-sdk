@@ -1,6 +1,6 @@
 # Decision: Invoke registered application commands with separate arguments
 
-Status: proposed
+Status: implemented
 
 ## Problem
 

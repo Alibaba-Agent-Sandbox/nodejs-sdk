@@ -1,6 +1,6 @@
 # Node SDK engineering records
 
-- [Application command invocation](notes/proposed/feature/2026-11-05-application-command-invocation.md) · [verification](evidence/verify/2026-11-05-application-command-invocation.md).
+- [Application command invocation](notes/implemented/feature/2026-11-05-application-command-invocation.md) · [verification](evidence/verify/2026-11-05-application-command-invocation.md).
 
 ## Current delivery — 2026-10-25
 
