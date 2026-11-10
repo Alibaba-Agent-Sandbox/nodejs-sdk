@@ -1,5 +1,7 @@
 # Node SDK engineering records
 
+- [Named deployment guidance](notes/proposed/process/2026-11-10-canonical-cli-guidance.md) · [verification](evidence/verify/2026-11-10-canonical-cli-guidance.md).
+
 - [Application command invocation](notes/implemented/feature/2026-11-05-application-command-invocation.md) · [verification](evidence/verify/2026-11-05-application-command-invocation.md).
 
 ## Current delivery — 2026-10-25

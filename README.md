@@ -50,6 +50,8 @@ try {
 
 `ABX_SERVER_TOKEN` is the application token configured for that service. For provider gateways, pass the exact service URL and the provider's `gatewayHeaders`; see [authentication and gateway connections](docs/server-client.md). Keep the application token separate from the provider API key.
 
+For a source template, the current CLI uses `abx deploy SOURCE --name APP`, `abx status APP` and `abx delete APP --yes`. Read the returned service endpoint and configure `ServerClient` explicitly; a local CLI application name is not a URL or a Sandbox ID. See the [CLI deployment guide](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox/blob/main/docs/en/guide/authoring-templates.md). Check your installed CLI’s help when using an older release.
+
 ## Supported operations
 
 | Method | Purpose |
