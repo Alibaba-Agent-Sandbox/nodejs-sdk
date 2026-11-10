@@ -66,3 +66,9 @@ state. A local/runtime result is not cloud acceptance or package publication.
 - [Shared application authentication tests](notes/proposed/feature/2026-10-26-shared-application-auth-tests.md) · [verification](evidence/verify/2026-10-26-shared-application-auth-tests.md).
 
 - [README audience review](notes/proposed/process/2026-10-28-readme-audience-review.md) · [verification](evidence/verify/2026-10-28-readme-audience-review.md).
+
+- [Preview release notice and community](notes/proposed/process/2026-11-10-preview-release-community.md) · [verification](evidence/verify/2026-11-10-preview-release-community.md).
+
+- [Community QR replacement](notes/proposed/process/2026-11-10-refresh-community-qr.md) · [verification](evidence/verify/2026-11-10-refresh-community-qr.md).
+
+- [Canonical CLI documentation mainline merge](evidence/verify/2026-11-10-simplification-main-merge.md).

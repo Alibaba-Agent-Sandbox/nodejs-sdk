@@ -6,6 +6,8 @@
 
 需要 Node.js 20+，仅支持 ESM。先用 [abx CLI](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox) 或 [Python SDK](https://github.com/Alibaba-Agent-Sandbox/python-sdk)创建沙箱并启动服务，再通过本包连接。
 
+> **预览版说明：** Agent Sandbox 目前处于预览阶段，可能会有不兼容变更。预计于 **2026 年 11 月 15 日**发布 **1.0.0 正式版**，敬请期待！
+
 ## 安装
 
 从源码构建安装包：
@@ -82,6 +84,14 @@ readEnv("sandbox_api_key", process.env);
 ## 开发
 
 运行 `npm ci`、`npm run typecheck` 和 `npm test`，测试会先构建 SDK。本地 Agent 循环及其 Python 运行时前提见[示例](examples/README.md)。问题请提交到 [Issues](https://github.com/Alibaba-Agent-Sandbox/nodejs-sdk/issues)。
+
+## 交流与反馈
+
+欢迎加入 **Agent Sandbox 开发者工具交流群**，交流使用经验、分享建议与反馈。[点击加入钉钉群](https://qr.dingtalk.com/action/joingroup?code=v1,k1,LSusypYdoGm4U0xoz1p1QSlgoBHeoi/kgpsl4uQ8qus=&_dt_no_comment=1&origin=1)，或搜索钉钉群号 **213605001586**。
+
+也可以使用钉钉扫描二维码加入：
+
+<a href="https://qr.dingtalk.com/action/joingroup?code=v1,k1,LSusypYdoGm4U0xoz1p1QSlgoBHeoi/kgpsl4uQ8qus=&amp;_dt_no_comment=1&amp;origin=1"><img src="assets/dingtalk-group.jpg" alt="钉钉交流群二维码" width="235" /></a>
 
 ## 许可证
 
