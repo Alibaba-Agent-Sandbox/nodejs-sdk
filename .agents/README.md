@@ -1,5 +1,10 @@
 # Node SDK engineering records
 
+## Recent changes — 2026-11-10
+
+- [Owner change index](notes/proposed/process/2026-11-10-recent-change-index.md) · [records verification](evidence/verify/2026-11-10-recent-change-index.md).
+- This is a dated source/delivery index; Draft implementation, prior releases and new validation remain separate.
+
 - [Named deployment guidance](notes/proposed/process/2026-11-10-canonical-cli-guidance.md) · [verification](evidence/verify/2026-11-10-canonical-cli-guidance.md).
 
 - [Application command invocation](notes/implemented/feature/2026-11-05-application-command-invocation.md) · [verification](evidence/verify/2026-11-05-application-command-invocation.md).
