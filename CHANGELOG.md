@@ -9,6 +9,8 @@
 
 ### Documentation
 
+- Document the named CLI deployment workflow and keep the Node SDK focused on explicit application HTTP endpoints. / 文档对齐具名部署命令，Node SDK 继续使用明确的应用 HTTP 地址。
+
 - Select the verified public Python a4 runtime and matching configuration-source tag; preserve prior a3 verification as history. / 本地示例与配置对照统一公开 Python a4，保留原 a3 验证记录。
 
 - Select verified public Python server 0.4.0a3 in the local example and CI, with its matching configuration-schema release tag.

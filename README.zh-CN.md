@@ -52,6 +52,8 @@ try {
 
 `ABX_SERVER_TOKEN` 是该服务配置的应用认证令牌。连接提供方网关时，应使用完整服务地址及提供方的 `gatewayHeaders`，详见[认证与网关连接](docs/server-client.zh-CN.md)。应用令牌与提供方 API Key 分开使用。
 
+源码模板使用当前 CLI 的 `abx deploy SOURCE --name APP` 部署，通过 `abx status APP` 查看，通过 `abx delete APP --yes` 删除。使用返回的服务端点显式配置 `ServerClient`；CLI 本机应用名称不等于 URL 或沙箱 ID。详见 [CLI 部署指南](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox/blob/main/docs/zh/guide/authoring-templates.md)。使用旧发行版时，以已安装 CLI 的帮助为准。
+
 ## 支持的操作
 
 | 方法 | 用途 |
