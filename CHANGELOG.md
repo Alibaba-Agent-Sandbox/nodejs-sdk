@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Remove the expired stable-release forecast while retaining the preview notice. / 删除已过期的正式版发布日期预告，保留预览版说明。
+
 ### Tests
 
 - Consume common application authentication vectors without adding SDK setup commands or changing public exports.
