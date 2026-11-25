@@ -6,7 +6,7 @@ Call sandbox application services from JavaScript or TypeScript. `@agent-sandbox
 
 Requires Node.js 20+ and ESM. Create the sandbox and start its service with the [abx CLI](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox) or [Python SDK](https://github.com/Alibaba-Agent-Sandbox/python-sdk); this package connects to that running service.
 
-> **Preview release:** Agent Sandbox is currently in preview and may introduce breaking changes. The stable **1.0.0** release is expected on **November 15, 2026**. Stay tuned!
+> **Preview release:** Agent Sandbox is currently in preview and may introduce breaking changes.
 
 ## Install
 

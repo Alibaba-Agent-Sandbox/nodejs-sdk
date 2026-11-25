@@ -6,7 +6,7 @@
 
 需要 Node.js 20+，仅支持 ESM。先用 [abx CLI](https://github.com/Alibaba-Agent-Sandbox/agent-sandbox) 或 [Python SDK](https://github.com/Alibaba-Agent-Sandbox/python-sdk)创建沙箱并启动服务，再通过本包连接。
 
-> **预览版说明：** Agent Sandbox 目前处于预览阶段，可能会有不兼容变更。预计于 **2026 年 11 月 15 日**发布 **1.0.0 正式版**，敬请期待！
+> **预览版说明：** Agent Sandbox 目前处于预览阶段，可能会有不兼容变更。
 
 ## 安装
 
