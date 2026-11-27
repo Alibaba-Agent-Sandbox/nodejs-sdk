@@ -40,6 +40,18 @@ A Node application must be able to install its dependencies, import a chosen fac
 
 After a high-level create with application preparation has obtained a new instance ID, preparation failure or cancellation must trigger a bounded independent cleanup attempt for that owned instance. `ApplicationPreparationError` retains the real ID, failed phase, original cause (including cancellation), and cleanup outcome (`deleted`, `failed`, or `unknown`) plus any cleanup cause. Accepted deletion without completion confirmation is `unknown`. Unknown creation without an ID is neither replayed nor assigned a guessed deletion target. This closing-stage wait is bounded separately from the original call; ordinary Client close never substitutes for remote deletion.
 
+### Follow-up contract clarification
+
+NJS-01/03 own matching result and service-identity contracts; NJS-04 owns server identity acceptance; NJS-05 owns helper/CLI/MCP reuse. These refinements stay within the existing tasks; no additional subsystem or completed implementation is implied.
+
+A received upload identity remains observable when a later helper stage fails. Preserve the original exception/HTTP details and recognizable cancellation, with safe progress containing the completed stage, known file ID and actual cleanup state. An unknown submission is not safe to replay or automatically delete. Explicit file deletion affects only the caller's selected upload, never a borrowed instance. MCP cancellation/disconnection cannot guarantee delivery of a final error or identity; do not add a recovery daemon or claim durable recovery from exception fields.
+
+Raw HTTP request/invoke keeps its status, allowed headers and body, including non-2xx. CLI and MCP adapters use actual HTTP executor metadata to report non-2xx as failure, not the presence or absence of an exception or an arbitrary business `error` field. A submission returning 202 is accepted, not completed; a completion-promising helper must observe its actual terminal contract. Successful tool output schemas do not constrain error content. Keep native E2B/OpenSandbox exception and process-result semantics intact.
+
+Default MD5 application authentication requires both sides to know the same real instance and historical cloud-template identity. Native connect may obtain platform traffic credentials without recovering that association. A Provider-verified mapping or an explicit caller assertion based on original creation facts may supply it; current Registry aliases, downloaded source and unverified runtime fields may not. The optional shared service binding `template_id` fills an unknown association only, never overwrites a confirmed identity or changes server-side identity, and is distinct from a platform-verified mapping. Compare only identifiers with the same confirmed semantics. Missing identity disables that authentication branch, with no alias guessing or authentication downgrade. The derived value is not strong authentication.
+
+The shared service configuration accepts the same optional template identity assertion as Python, including OpenAPI options and bindings used by named calls or helpers. Preserve recognizable AbortError and original HTTP error metadata. Keep raw request available on helper transports; do not add a new generic deletion API solely for a sample. External custom Bearer remains an explicit application value, not a new token-distribution mechanism.
+
 ## Alternatives considered
 
 - **Keep Node as an HTTP-only facade while adding target behavior to the CLI.** Rejected because the target explicitly includes Node Client and Server SDKs, and the CLI must reuse a library rather than own the runtime business implementation.
@@ -77,6 +89,13 @@ Real platform tests use fixed versions and a bounded resource set. Verify privat
 
 ## Acceptance criteria
 
+Follow-up acceptance also requires:
+
+- Run shared response/identity fixtures and Node-specific cancellation checks without changing native style exceptions.
+- Verify actual 200 versus 202 for completion-promising helpers, known file ID retention, one-file cleanup and legal error projection to CLI/MCP.
+- Use the same unpublished Node helper through SDK and CLI/MCP; no extra handler, automatic retry, generated token or CLI-state import is introduced.
+
+
 - [ ] NJS-01 consumes the agreed neutral contract revision and fixtures without a divergent field set; public Node types and ESM exports match the implemented target scope.
 - [ ] NJS-02 loads the selected Provider independently of CLI, and the real supported host artifact runs for Python without a user-managed engine or system Node prerequisite. Host loss and incomplete outcomes never become success or automatic write replay.
 - [ ] NJS-03 supports an SDK-only install/create-or-connect/business/cleanup chain and preserves private access data without leaking it. CLI uses the same runtime methods and does not become a dependency of those methods.
@@ -90,3 +109,5 @@ Real platform tests use fixed versions and a bounded resource set. Verify privat
 Planning basis: the unified target design reviewed on 2026-11-27 and the Node repository's current contributor and engineering-record rules. The current package description and README scope were inspected as a baseline, not treated as the target implementation. This record includes no new runtime validation, deployment, package publication, or completed implementation claim; future verification belongs in this repository's normal evidence location.
 
 Document validation and review disposition: [verification](../../../evidence/verify/2026-11-27-unified-design-plan.md).
+
+Follow-up review and verification: [failure and authentication contracts](../../../evidence/verify/2026-11-27-feedback-contracts.md).
