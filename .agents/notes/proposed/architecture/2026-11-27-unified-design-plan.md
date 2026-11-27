@@ -52,6 +52,30 @@ Default MD5 application authentication requires both sides to know the same real
 
 The shared service configuration accepts the same optional template identity assertion as Python, including OpenAPI options and bindings used by named calls or helpers. Preserve recognizable AbortError and original HTTP error metadata. Keep raw request available on helper transports; do not add a new generic deletion API solely for a sample. External custom Bearer remains an explicit application value, not a new token-distribution mechanism.
 
+### Detailed delivery contract refinement
+
+The detailed review adds finite parameter, response and capability requirements to these existing tasks. The [Python-owned neutral delivery contract](https://github.com/Alibaba-Agent-Sandbox/python-sdk/blob/main/.agents/notes/proposed/architecture/2026-11-27-unified-design-plan.md#detailed-delivery-contract-refinement) is the shared source for resource inputs/results, Express coverage, native-field preservation and E2B semantics; this owner record assigns its consumer implementation rather than duplicating that specification.
+
+Record implementation, contract tests, real-backend acceptance (exact platform/runtime combination) and release artifact separately. These remain proposed requirements. A documentation or merge result completes none of the runtime states. The common contract requires explicit create/get/connect, positive optional connect TTL only when declared, standard list pagination and the closed ActionResult model. Ordinary result output is redacted; a write with an unknown result is not replayed. SDK runtime configuration never comes from implicit CLI state.
+
+The fixed 2026-11-27 official management metadata contains 41 operations; the earlier 29 already included template cache. Native request/response nested fields matter, not only operation counts. Instance E2B HTTP and envd data capabilities are separate. Instance logs/metrics remain required but cannot be registered as supported until the fixed native parameters and actual platform/follow semantics pass. Do not fabricate since/tail/step mappings or turn placeholder metrics into measured zero.
+
+The built-in E2B helper target is the explicitly declared files/commands/PTY set against separately pinned Python and Node 2.31.0 sources. It is not full E2B cloud compatibility. Legacy-envd regular-file upload needs a genuinely bounded multipart encoder; unknown-length input without verified streaming support fails before consumption/submission. Command capture has a configurable 16 MiB default, including upstream accumulation; overflow preserves known PID/partial output without implicitly killing the process or reporting completion.
+
+#### Node owner completion checklist
+
+NJS-01/02 consume the Python-owned neutral contract revision and implement the independent ProviderClient/Express runtime. Current HTTP-client exports are not evidence that Node cloud management or Server APIs exist. Keep Node-only Provider execution below the CLI; package its actual dependencies so Python consumers need no abx executable or public engine command.
+
+The target ProviderClient exposes target/sandbox/describe/supports/operations, call/stream/close and sandboxes.create/get/connect/list/delete. Its options use camelCase but operation JSON keeps declared snake_case keys. A typed connect wrapper may map ttlSeconds to input.ttl_seconds once; generic call must not recursively rename JSON. SandboxHandle exposes style/bind/discover/call/close; style may await local installed-module loading only and must not perform network discovery or installation.
+
+NJS-03 completes ServerClient request/invoke/call, loadContract, operations/supports/describe, typed Server-tool APIs, file conveniences and close. Raw HTTP preserves HttpResponse while typed conveniences retain their specific result/error behavior. E2B File/Command/Watch/PTY result models and exception fields are part of the contract, not just matching method names. Implement explicit request/connection/capture budgets, upstream accumulation limits, streaming file bodies, AbortSignal propagation and sibling-safe resource ownership.
+
+NJS-04 completes target Server author exports under @agent-sandbox/sdk/server: explicit input/output schemas, one registration table, routes/OpenAPI/application export, policy/authentication, start/serve/shutdown, request/response/SSE and PTY author support. The subpath is a target export, not a current package promise. Python type inference has no implicit Node equivalent; Node authors provide schemas and handlers return JSON matching them. The runtime cannot infer permissions from arbitrary inbound headers.
+
+NJS-05 uses the SDK-owned `agent-sandbox-provider install SOURCE` preparation bin (explicitly local through `npx --no-install` when used); update/removal use normal project dependencies. It completes explicit helper factories and fixed MCP contracts under the target /mcp export. Node SDK and CLI reuse the same installed helper implementation; package installation and CLI preferences remain separate. A helper with a local file argument reads the Node process's filesystem, never a browser user's disk or the remote Sandbox filesystem. Native file/PTY streams need their own supported transport; do not promise them through generic JSON stdio RPC.
+
+NJS-06 must test declarations and actual ESM package exports, independent installation with no CLI store, protected instance access after explicit connection, all declared Server tool and E2B data methods, Python/Node Server interoperability, binary hashing and bounded memory, cancellation/cleanup and real platform conditional capabilities. Public bilingual guides and Skill/MCP usage change only with available implementations.
+
 ## Alternatives considered
 
 - **Keep Node as an HTTP-only facade while adding target behavior to the CLI.** Rejected because the target explicitly includes Node Client and Server SDKs, and the CLI must reuse a library rather than own the runtime business implementation.
@@ -111,3 +135,5 @@ Planning basis: the unified target design reviewed on 2026-11-27 and the Node re
 Document validation and review disposition: [verification](../../../evidence/verify/2026-11-27-unified-design-plan.md).
 
 Follow-up review and verification: [failure and authentication contracts](../../../evidence/verify/2026-11-27-feedback-contracts.md).
+
+Detailed delivery-contract verification: [parameter and capability review](../../../evidence/verify/2026-11-27-delivery-contracts.md).
